@@ -104,7 +104,7 @@ const topicStep = new Step({
       topic: parsedTopic,
     };
   },
-});
+}); 
 
 // Define the workflow, providing the Zod schema
 export const articleAnalysisWorkflow = new Workflow({

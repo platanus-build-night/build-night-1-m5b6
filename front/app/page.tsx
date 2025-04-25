@@ -1,120 +1,131 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { SunIcon, MoonIcon, Squares2X2Icon, ChartBarIcon } from "@heroicons/react/24/outline"
+import { MoonIcon } from "@heroicons/react/24/outline"
 import FeaturedHeadline from "@/components/featured-headline"
 import CategoryCard from "@/components/category-card"
-import GraphMode from "@/components/graph-mode"
+// import GraphMode from "@/components/graph-mode" // Not used in this layout
 import { mockCategories, mockFeaturedHeadline } from "@/lib/mock-data"
 import { motion } from "framer-motion"
+import DayNightVisor from "@/components/day-night-visor"
+
+// TODO: Implement half-circle Day/Night indicator component
+// const DayNightIndicator = ({ isDaytime }) => { ... }
 
 export default function Home() {
-  const [mode, setMode] = useState<"dashboard" | "graph">("dashboard")
+  // Remove mode and expandedCategory state
   const [isDaytime, setIsDaytime] = useState(true)
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
+  const [timeUntilChange, setTimeUntilChange] = useState("")
 
-  // Mock day/night cycle - in a real app, this would check actual sunrise/sunset
   useEffect(() => {
-    const checkDayTime = () => {
-      const hours = new Date().getHours()
-      setIsDaytime(hours >= 6 && hours < 20)
+    const calculateTimeState = () => {
+      const now = new Date()
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const seconds = now.getSeconds()
+
+      const currentTotalSeconds = hours * 3600 + minutes * 60 + seconds
+      const sunriseSeconds = 6 * 3600 // 6:00 AM
+      const sunsetSeconds = 20 * 3600 // 8:00 PM
+      const totalDaySeconds = 24 * 3600
+
+      let nextChangeEventSeconds: number
+      let currentlyDaytime: boolean
+
+      if (currentTotalSeconds >= sunriseSeconds && currentTotalSeconds < sunsetSeconds) {
+        currentlyDaytime = true
+        nextChangeEventSeconds = sunsetSeconds
+      } else {
+        currentlyDaytime = false
+        if (currentTotalSeconds < sunriseSeconds) {
+          nextChangeEventSeconds = sunriseSeconds
+        } else {
+          nextChangeEventSeconds = sunriseSeconds + totalDaySeconds
+        }
+      }
+
+      setIsDaytime(currentlyDaytime)
+
+      const remainingSeconds = (nextChangeEventSeconds - currentTotalSeconds + totalDaySeconds) % totalDaySeconds
+      const remainingHours = Math.floor(remainingSeconds / 3600)
+      const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60)
+      setTimeUntilChange(`${remainingHours}h ${remainingMinutes}m until ${currentlyDaytime ? "sunset" : "sunrise"}`)
     }
 
-    checkDayTime()
-    const interval = setInterval(checkDayTime, 60000)
+    calculateTimeState()
+    const interval = setInterval(calculateTimeState, 1000)
     return () => clearInterval(interval)
   }, [])
 
-  const toggleMode = () => {
-    setMode(mode === "dashboard" ? "graph" : "dashboard")
-    setExpandedCategory(null)
-  }
+  // Calculate positioning for orbiting categories
+  const numCategories = mockCategories.length
+  const orbitRadius = 250 // Adjust as needed for desired spacing
+  const angleStep = (2 * Math.PI) / numCategories
 
   return (
-    <main className="flex min-h-screen flex-col bg-white dark:bg-black text-black dark:text-white">
-      {/* App Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-lg bg-white/80 dark:bg-black/80 border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-medium">houp.cl</h1>
-            {/* Day/Night Visor */}
-            <div className="ml-2 flex items-center">
-              {isDaytime ? (
-                <div className="flex items-center text-amber-500">
-                  <SunIcon className="h-5 w-5 mr-1" />
-                  <span className="text-xs">Open</span>
-                </div>
-              ) : (
-                <div className="flex items-center text-indigo-400">
-                  <MoonIcon className="h-5 w-5 mr-1" />
-                  <span className="text-xs">Closed until sunrise</span>
+    // Main container: Full height, flex column, centered, relative for positioning children
+    <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-white dark:bg-black text-black dark:text-white overflow-hidden">
+      {/* Center Content Area */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+          <div className="flex flex-col items-center text-center">
+              <h1 className="text-3xl font-medium font-serif mb-4 pointer-events-auto">houp.cl</h1>
+              <DayNightVisor isDaytime={isDaytime} timeUntilChange={timeUntilChange} />
+              {isDaytime && (
+                <div className="mt-4 max-w-sm pointer-events-auto">
+                  <FeaturedHeadline headline={mockFeaturedHeadline.headline} digest={mockFeaturedHeadline.digest} />
                 </div>
               )}
-            </div>
           </div>
-
-          {/* Mode Toggle */}
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-0.5">
-            <button
-              onClick={() => setMode("dashboard")}
-              className={`flex items-center px-3 py-1.5 rounded-full text-sm ${
-                mode === "dashboard" ? "bg-white dark:bg-gray-900 shadow-sm" : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              <Squares2X2Icon className="h-4 w-4 mr-1.5" />
-              Dashboard
-            </button>
-            <button
-              onClick={() => setMode("graph")}
-              className={`flex items-center px-3 py-1.5 rounded-full text-sm ${
-                mode === "graph" ? "bg-white dark:bg-gray-900 shadow-sm" : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              <ChartBarIcon className="h-4 w-4 mr-1.5" />
-              Immersive
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Featured Headline */}
-      {isDaytime && <FeaturedHeadline headline={mockFeaturedHeadline.headline} digest={mockFeaturedHeadline.digest} />}
-
-      {/* Content Area */}
-      <div className="flex-1 container mx-auto px-4 py-6">
-        {!isDaytime ? (
-          <div className="flex flex-col items-center justify-center h-[70vh] text-center">
-            <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
-            <h2 className="text-2xl font-medium mb-2">Houp is resting</h2>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md">
-              We're closed for the night. Return after sunrise for your daily dose of positive news.
-            </p>
-          </div>
-        ) : mode === "dashboard" ? (
-          <motion.div
-            layout
-            transition={springTransition}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {mockCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                isExpanded={expandedCategory === category.id}
-                onToggle={() => setExpandedCategory(expandedCategory === category.id ? null : category.id)}
-              />
-            ))}
-          </motion.div>
-        ) : (
-          <GraphMode categories={mockCategories} />
-        )}
       </div>
+
+      {/* Orbiting Categories Container */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ width: `${orbitRadius * 2}px`, height: `${orbitRadius * 2}px` }}
+        animate={{ rotate: 360 }} // Continuous rotation
+        transition={{ ease: "linear", duration: 60, repeat: Infinity }} // Adjust duration for speed
+      >
+        {mockCategories.map((category, index) => {
+          const angle = angleStep * index - Math.PI / 2 // Start from top (-90 deg)
+          const x = orbitRadius * Math.cos(angle)
+          const y = orbitRadius * Math.sin(angle)
+
+          return (
+            <motion.div
+              key={category.id}
+              className="absolute"
+              style={{
+                // Position origin at the center of the container, then translate out
+                left: '50%', 
+                top: '50%',
+                x: x - 40, // Center the card (half of w-20)
+                y: y - 40, // Center the card (half of h-20)
+              }}
+              // Counter-rotate the card itself to keep it upright
+              animate={{ rotate: -360 }}
+              transition={{ ease: "linear", duration: 60, repeat: Infinity }} 
+            >
+              <CategoryCard category={category} />
+            </motion.div>
+          )
+        })}
+      </motion.div>
+
+      {/* Night overlay or alternative display */} 
+      {!isDaytime && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
+            <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
+            <h2 className="text-2xl font-medium text-white mb-2">Houp is resting</h2>
+            <p className="text-gray-400 max-w-md text-center">
+                We're closed for the night. Return after sunrise for your daily dose of positive news.
+            </p>
+            <p className="mt-2 text-sm text-indigo-300">{timeUntilChange}</p>
+        </div>
+      )}
+
+      {/* Remove Mode Toggle */}
     </main>
   )
 }
 
-const springTransition = {
-  type: "spring",
-  stiffness: 300,
-  damping: 30,
-}
+// Remove springTransition as it's not directly used here anymore

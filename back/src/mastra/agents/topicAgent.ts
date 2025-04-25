@@ -20,7 +20,7 @@ const topicOutputTool = createTool({
       topic: context.topic,
     };
   },
-});
+}); 
 
 export const topicAgent = new Agent({
   name: "TopicAgent",

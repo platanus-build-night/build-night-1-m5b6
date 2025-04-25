@@ -1,6 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import TeleTreceArticleScraper, { ScrapedArticleDetail } from './TeleTreceArticle.scraper';
+import { AuthorSource } from "../../types"; // Import shared types
+import { articleAnalysisWorkflow } from "../../../mastra/workflows/workflow"; // Import the workflow
 
 // --- Interfaces --- 
 
@@ -165,11 +167,52 @@ class TeleTreceScraper {
   }
 
   /**
-   * Placeholder for final filtering or tagging logic on detailed articles.
+   * Runs the MASTra analysis workflow on the first article.
    */
   protected async filterAndTag(articles: ScrapedArticleDetail[]): Promise<ScrapedArticleDetail[]> {
-    console.log(`Filtering and tagging ${articles.length} detailed articles... (Placeholder)`);
-    // Implement actual filtering/tagging logic here if needed
+    console.log(`Received ${articles.length} detailed articles for analysis step.`);
+
+    if (articles.length === 0) {
+      console.log("No articles to analyze.");
+      return articles; // Return empty array if no articles
+    }
+
+    const firstArticle = articles[0];
+    console.log(`Attempting to analyze first article: ${firstArticle.url}`);
+
+    try {
+      // Ensure the article has the required fields for the workflow schema
+      if (!firstArticle.content || !firstArticle.author || !firstArticle.url) {
+        console.error("First article is missing required fields for analysis (content, author, url). Skipping analysis.");
+        return articles; // Return original articles if first one is invalid
+      }
+
+      console.log("Creating and starting analysis workflow run...");
+      const { runId, start } = articleAnalysisWorkflow.createRun();
+      console.log(`Workflow run created with ID: ${runId}`);
+
+      const workflowInput = {
+        article: {
+          ...firstArticle,
+          author: firstArticle.author, // Make sure it's using AuthorSource enum value
+        },
+      };
+
+      const analysisResult = await start({ triggerData: workflowInput });
+
+      console.log("Workflow analysis completed.");
+      console.log("Analysis Result:", JSON.stringify(analysisResult.results, null, 2));
+
+      // Optionally, you could add the result to the article object here
+      // e.g., (firstArticle as any).analysis = analysisResult.results;
+
+    } catch (error) {
+      console.error("Error running article analysis workflow:", error);
+      // Decide if you want to stop the process or just log the error
+    }
+
+    // Return the original list of articles, regardless of analysis outcome
+    console.log("Analysis step finished. Returning original article list.");
     return articles;
   }
 

@@ -11,6 +11,7 @@ export interface Category {
   id: string
   name: string
   gradient: string
+  icon?: string
   articles: Article[]
 }
 

@@ -38,11 +38,4 @@ export class ScraperController {
       });
     }
   }
-
-  // Add more routes here for other scrapers
-  // Example:
-  // @Get('/someothersite')
-  // async scrapeSomeOtherSite(@Res() response: Response): Promise<Response> {
-  //   // ... implementation ...
-  // }
 }

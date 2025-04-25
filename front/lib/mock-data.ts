@@ -11,6 +11,7 @@ export const mockCategories: Category[] = [
     id: "nature",
     name: "Nature",
     gradient: "linear-gradient(135deg, #4CAF50, #8BC34A, #CDDC39)",
+    icon: "GlobeAltIcon",
     articles: [
       {
         id: "nature-1",
@@ -40,6 +41,7 @@ export const mockCategories: Category[] = [
     id: "social",
     name: "Social",
     gradient: "linear-gradient(135deg, #FF5722, #FF9800, #FFC107)",
+    icon: "UserGroupIcon",
     articles: [
       {
         id: "social-1",
@@ -68,6 +70,7 @@ export const mockCategories: Category[] = [
     id: "science",
     name: "Science",
     gradient: "linear-gradient(135deg, #2196F3, #03A9F4, #00BCD4)",
+    icon: "BeakerIcon",
     articles: [
       {
         id: "science-1",
@@ -97,6 +100,7 @@ export const mockCategories: Category[] = [
     id: "technology",
     name: "Technology",
     gradient: "linear-gradient(135deg, #9C27B0, #673AB7, #3F51B5)",
+    icon: "CpuChipIcon",
     articles: [
       {
         id: "tech-1",
@@ -125,6 +129,7 @@ export const mockCategories: Category[] = [
     id: "health",
     name: "Health",
     gradient: "linear-gradient(135deg, #E91E63, #F44336, #FF5722)",
+    icon: "HeartIcon",
     articles: [
       {
         id: "health-1",
@@ -153,6 +158,7 @@ export const mockCategories: Category[] = [
     id: "arts",
     name: "Arts",
     gradient: "linear-gradient(135deg, #009688, #4CAF50, #8BC34A)",
+    icon: "PaintBrushIcon",
     articles: [
       {
         id: "arts-1",
