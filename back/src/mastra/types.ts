@@ -15,17 +15,17 @@ export const ArticleAnalysisInputSchema = z.object({
 });
 
 export enum Sentiment {
-  Positive = "Positive",
-  Negative = "Negative",
-  Neutral = "Neutral",
+  Positive = "positive",
+  Negative = "negative",
+  Neutral = "neutral",
 }
 
 export enum Topic {
-  Nature = "Nature",
-  Social = "Social",
-  Science = "Science",
-  Technology = "Technology",
-  Health = "Health",
-  Arts = "Arts",
+  Nature = "nature",
+  Social = "social",
+  Science = "science",
+  Technology = "tech",
+  Health = "health",
+  Arts = "arts",
 }
 

@@ -34,9 +34,21 @@ class TeleTreceArticleScraper {
 
     const title = mainArticle.find('h1[itemprop="headline"]').text().trim();
     const author = mainArticle.find(".autor a").text().trim();
-    const publishedDate = mainArticle
+    const publishedDateString = mainArticle
       .find('time[itemprop="datePublished"]')
       .attr("datetime");
+
+    let isoPublishedDate: string | undefined = undefined;
+    if (publishedDateString) {
+      try {
+        // Attempt to parse the date string and convert to ISO format (UTC)
+        // Replace space with 'T' if needed for formats like 'YYYY-MM-DD HH:MM:SS'
+        const parsableDateString = publishedDateString.replace(' ', 'T');
+        isoPublishedDate = new Date(parsableDateString).toISOString();
+      } catch (e) {
+        console.warn(`Could not parse date string "${publishedDateString}" for T13 article ${url}: ${(e as Error).message}`);
+      }
+    }
 
     // Select the core content area
     const contentElement = mainArticle.find(".cuerpo-content");
@@ -61,7 +73,7 @@ class TeleTreceArticleScraper {
       url,
       title: title || undefined,
       author: AuthorSource.T13,
-      publishedDate: publishedDate || undefined,
+      publishedDate: isoPublishedDate,
       content: content.trim(), // Trim trailing newlines
     };
   }

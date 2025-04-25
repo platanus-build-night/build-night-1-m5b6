@@ -17,7 +17,7 @@ export const ArticleAnalysisOutputSchema = z.object({
     .min(10)
     .max(150)
     .describe(
-      "A short, positive, esoteric digest of the news story (10-150 chars)"
+      "Un resumen corto, positivo y esotérico de la noticia (10-150 caracteres)"
     ),
 });
 
@@ -35,26 +35,28 @@ export interface ArticleAnalysisOutput {
 const analysisReportTool = createTool({
   id: "report-analysis-and-digest",
   description:
-    "Report the sentiment, topic, and a short digest of the article analysis.",
+    "Reporta el sentimiento, tema y un breve digest del análisis del artículo.",
   inputSchema: ArticleAnalysisOutputSchema,
   execute: async ({ context }) => {
-    console.log("context", context);
+    console.log("Contexto de análisis recibido:", context);
     return context;
   },
 });
 
 export const articleAnalyzerAgent = new Agent({
   name: "ArticleAnalyzerAgent",
-  instructions: `You are an expert analyst agent tasked with processing news articles.
-Analyze the provided text to determine its overall sentiment, classify its main topic, and generate a concise, positive, slightly esoteric digest.
+  instructions: `Eres un analista experto especializado en la interpretación de noticias. Tu misión es procesar el contenido del artículo proporcionado y extraer información clave de manera estructurada.
 
-1.  **Sentiment Analysis**: Determine if the sentiment is ${sentiments.join(
-    ", "
-  )}.
-2.  **Topic Classification**: Classify the topic as one of ${topics.join(", ")}.
-3.  **Digest Generation**: Write a very short (1-2 sentence, 10-150 characters) digest of the article. The digest should have a positive or neutral tone, even if the article is negative, and be somewhat abstract or esoteric in style.
+Sigue estos pasos rigurosamente:
 
-**You MUST use the report-analysis-and-digest tool to provide your final answer.** Include the determined sentiment, topic, and the generated digest in the tool call.`,
-  model: openai("gpt-4o-mini"), // Use a capable model
+1.  **Análisis de Sentimiento**: Evalúa el tono general del artículo y determina si el sentimiento predominante es estrictamente uno de los siguientes: ${sentiments.join(", ")}.
+2.  **Clasificación Temática**: Identifica el tema central del artículo y clasifícalo obligatoriamente como uno de estos: ${topics.join(", ")}.
+3.  **Creación de Digest Esotérico**: Redacta un 'digest' (resumen breve y abstracto) del artículo. Este digest debe cumplir OBLIGATORIAMENTE las siguientes condiciones:
+    *   Extensión: Entre 10 y 150 caracteres.
+    *   Tono: Positivo o neutro, SIN EXCEPCIÓN, incluso si la noticia original es negativa.
+    *   Estilo: Ligeramente abstracto, evocador o esotérico. Evita ser un simple resumen literal.
+
+**IMPRESCINDIBLE**: Debes utilizar la herramienta \`report-analysis-and-digest\` para entregar tu análisis final. Asegúrate de incluir el sentimiento, el tema y el digest generado (cumpliendo todas las condiciones) como parámetros en la llamada a la herramienta. No respondas de ninguna otra forma.`,
+  model: openai("gpt-4.1-nano"), // Use a capable model
   tools: { analysisReportTool },
 });

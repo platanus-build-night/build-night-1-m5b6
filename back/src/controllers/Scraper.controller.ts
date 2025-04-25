@@ -1,5 +1,5 @@
 import { JsonController, Get, Res } from "routing-controllers";
-import { Response } from "express";
+import { response, Response } from "express";
 import TeleTreceScraper from "../scrapers/sites/t13/TeleTrece.scraper";
 import EmolScraper from "../scrapers/sites/emol/Emol.scraper";
 
@@ -11,6 +11,7 @@ export class ScraperController {
       const scraper = new TeleTreceScraper();
       const articles = await scraper.scrape();
       return response.json({
+        total: articles.length,
         articles: articles,
       });
     } catch (error) {
@@ -28,6 +29,7 @@ export class ScraperController {
       const scraper = new EmolScraper();
       const articles = await scraper.scrape();
       return response.json({
+        total: articles.length,
         articles: articles,
       });
     } catch (error) {
