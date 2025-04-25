@@ -26,17 +26,34 @@ const sentimentStep = new Step({
     if (!article) {
       throw new Error('Article not found in trigger data');
     }
-    const result = await sentimentAgent.generate(article.content);
+    
+    // Prompt the agent to analyze sentiment and use the tool
+    const result = await sentimentAgent.generate(
+      `Analyze the sentiment of this text and use the analyze-sentiment tool to report your findings: ${article.content}`
+    );
 
+    console.log('Sentiment analysis result:', result);
+    
+    // Extract sentiment from the tool usage or text
     let parsedSentiment = Sentiment.Neutral;
-    const resultText = result.text.trim();
-    if (Object.values(Sentiment).includes(resultText as Sentiment)) {
-      parsedSentiment = resultText as Sentiment;
-    } else {
-      console.warn(`Sentiment agent returned unexpected text: ${resultText}`);
+    
+    // Try to find sentiment in tool results if available
+    if (result.toolResults && result.toolResults.length > 0) {
+      const sentimentToolResult = result.toolResults.find(r => r.toolName === "analyze-sentiment");
+      if (sentimentToolResult && sentimentToolResult.result?.sentiment) {
+        parsedSentiment = sentimentToolResult.result.sentiment as Sentiment;
+      }
+    } 
+    // Fallback to parsing from text response
+    else if (result.text) {
+      const text = result.text.toLowerCase();
+      if (text.includes('positive')) {
+        parsedSentiment = Sentiment.Positive;
+      } else if (text.includes('negative')) {
+        parsedSentiment = Sentiment.Negative;
+      }
     }
 
-    console.log('Sentiment analysis result:', parsedSentiment);
     return {
       sentiment: parsedSentiment,
       originalArticle: article,
@@ -53,22 +70,35 @@ const topicStep = new Step({
     if (!sentimentResult?.originalArticle?.content) {
       throw new Error('Article content not found from previous step');
     }
-    if (sentimentResult?.sentiment === undefined) {
-      throw new Error('Sentiment not found from previous step');
-    }
-
-    const content = sentimentResult.originalArticle.content;
-    const result = await topicAgent.generate(content);
-
+    
+    // Prompt the agent to categorize the topic and use the tool
+    const result = await topicAgent.generate(
+      `Categorize the topic of this text and use the categorize-topic tool to report your findings: ${sentimentResult.originalArticle.content}`
+    );
+    
+    console.log('Topic analysis result:', result);
+    
+    // Extract topic from the tool usage or text
     let parsedTopic = Topic.Social;
-    const resultText = result.text.trim();
-    if (Object.values(Topic).includes(resultText as Topic)) {
-      parsedTopic = resultText as Topic;
-    } else {
-      console.warn(`Topic agent returned unexpected text: ${resultText}`);
+    
+    // Try to find topic in tool results if available
+    if (result.toolResults && result.toolResults.length > 0) {
+      const topicToolResult = result.toolResults.find(r => r.toolName === "categorize-topic");
+      if (topicToolResult && topicToolResult.result?.topic) {
+        parsedTopic = topicToolResult.result.topic as Topic;
+      }
+    }
+    // Fallback to parsing from text response
+    else if (result.text) {
+      const text = result.text.toLowerCase();
+      for (const topic of Object.values(Topic)) {
+        if (text.includes(topic.toLowerCase())) {
+          parsedTopic = topic;
+          break;
+        }
+      }
     }
 
-    console.log('Topic analysis result:', parsedTopic);
     return {
       sentiment: sentimentResult.sentiment,
       topic: parsedTopic,
