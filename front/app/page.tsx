@@ -6,6 +6,7 @@ import FeaturedHeadline from "@/components/featured-headline"
 import CategoryCard from "@/components/category-card"
 import GraphMode from "@/components/graph-mode"
 import { mockCategories, mockFeaturedHeadline } from "@/lib/mock-data"
+import { motion } from "framer-motion"
 
 export default function Home() {
   const [mode, setMode] = useState<"dashboard" | "graph">("dashboard")
@@ -90,7 +91,11 @@ export default function Home() {
             </p>
           </div>
         ) : mode === "dashboard" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            layout
+            transition={springTransition}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {mockCategories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -99,11 +104,17 @@ export default function Home() {
                 onToggle={() => setExpandedCategory(expandedCategory === category.id ? null : category.id)}
               />
             ))}
-          </div>
+          </motion.div>
         ) : (
           <GraphMode categories={mockCategories} />
         )}
       </div>
     </main>
   )
+}
+
+const springTransition = {
+  type: "spring",
+  stiffness: 300,
+  damping: 30,
 }

@@ -25,7 +25,7 @@ export default function RootLayout({
             rel="stylesheet"  
           />
       </head>
-      <body>{children}</body>
+      <body className="bg-gray-50 dark:bg-gray-950">{children}</body>
     </html>
   )
 }

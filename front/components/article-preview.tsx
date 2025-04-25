@@ -1,12 +1,17 @@
 import type { Article } from "@/lib/types"
+import { motion, Variants } from "framer-motion"
 
 interface ArticlePreviewProps {
   article: Article
+  variants?: Variants
 }
 
-export default function ArticlePreview({ article }: ArticlePreviewProps) {
+export default function ArticlePreview({ article, variants }: ArticlePreviewProps) {
   return (
-    <div className="rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow">
+    <motion.div
+      variants={variants}
+      className="rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900"
+    >
       <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
           {/* Placeholder for image */}
@@ -30,6 +35,6 @@ export default function ArticlePreview({ article }: ArticlePreviewProps) {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

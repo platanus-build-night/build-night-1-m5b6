@@ -1,18 +1,9 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-
-// Interface for the detailed scraped article content
-interface ScrapedArticleDetail {
-  url: string;
-  title?: string;
-  author?: string;
-  publishedDate?: string; // Keep as string for simplicity, could be parsed later
-  content: string; // The main article text
-}
+import { ScrapedArticleDetail } from '../types';
 
 class TeleTreceArticleScraper {
 
-  // Fetches the HTML for a single article URL
   private async fetchArticleHtml(url: string): Promise<string | null> {
     console.log(`Fetching article HTML from: ${url}`);
     try {
