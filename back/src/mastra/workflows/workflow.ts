@@ -32,6 +32,9 @@ const analyzeArticleStep = new Step({
 export const articleAnalysisWorkflow = new Workflow({
   name: "ArticleAnalysisWorkflow",
   triggerSchema: ArticleAnalysisInputSchema,
+  retryConfig: {
+    attempts: 1,
+  },
 });
 
 articleAnalysisWorkflow.step(analyzeArticleStep).commit();

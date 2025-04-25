@@ -9,5 +9,9 @@ export interface ScrapedArticleDetail {
     author: AuthorSource;
     publishedDate?: string; 
     content: string; 
+
+    sentiment?: string;
+    topic?: string;
+    digest?: string;
   }
   
