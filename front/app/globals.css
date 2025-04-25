@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap");
 
 @layer base {
   :root {
@@ -72,11 +73,16 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "SF Pro", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "SF Pro", system-ui, -apple-system, BlinkMacSystemFont,
+      sans-serif;
   }
   .font-serif {
-    font-family: "Instrument Serif", Georgia, serif;
+    font-family: "Instrument Serif", serif !important;
   }
+}
+
+.font-serif {
+  font-family: "Instrument Serif", serif !important;
 }
 
 @keyframes gradientMove {

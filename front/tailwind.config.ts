@@ -18,6 +18,9 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Instrument Sans', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

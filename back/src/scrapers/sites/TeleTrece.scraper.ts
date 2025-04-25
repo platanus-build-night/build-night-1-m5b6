@@ -1,75 +1,84 @@
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-import { BaseScraper, ScrapedArticle } from '../base/BaseScraper';
+import axios from "axios";
+import * as cheerio from "cheerio";
+import TeleTreceArticleScraper, { ScrapedArticleDetail } from './TeleTreceArticle.scraper'; // Import the article scraper
 
-// Define the expected structure of the AJAX response item containing HTML
+// Interface for the initial list item parsed from the AJAX response
+interface ArticleListItem {
+  title: string;
+  url: string;
+  time?: string;
+}
+
+// Define the structure of the Ajax response items
 interface AjaxResponseItem {
   command: string;
   data?: string;
-  // Add other fields if needed, based on the actual response structure
 }
 
-class TeleTreceScraper extends BaseScraper {
-  private ajaxUrl = 'https://www.t13.cl/views/ajax?_wrapper_format=drupal_ajax';
+class TeleTreceScraper {
+  private url = "https://www.t13.cl/views/ajax?_wrapper_format=drupal_ajax";
 
-  constructor() {
-    super('https://www.t13.cl');
-  }
-
-  // Override fetchHtml to make the specific POST request
-  protected async fetchHtml(url: string): Promise<string | null> {
-    // Note: The 'url' parameter (this.siteUrl) isn't directly used for fetching
-    // in this overridden method, but the base class structure passes it.
-    // We use this.ajaxUrl instead.
-
-    // Construct the form data payload. Let's start with page 0.
-    // You might need to adjust view_dom_id if it's dynamic.
+  // Fetches the initial AJAX response containing the list HTML
+  protected async fetchListHtml(): Promise<AjaxResponseItem[] | null> {
+    console.log("Fetching article list HTML...");
     const formData = new URLSearchParams({
-      view_name: 't13_loultimo_seccion',
-      view_display_id: 'page_1',
-      view_args: '',
-      view_path: '/lo-ultimo',
-      view_base_path: 'lo-ultimo',
-      view_dom_id: '2f9e6a936fa9215c52b1d4e9c098bccf19bc6da3191da3d4139b7a32ef76902d', // This might need to be dynamic
-      pager_element: '0',
-      page: '0', // Fetch the first page initially
-      _drupal_ajax: '1',
-      'ajax_page_state[theme]': 't13_v1',
-      'ajax_page_state[theme_token]': '',
-      'ajax_page_state[libraries]': 'ads13/ads-management,system/base,views/views.ajax,views/views.module,views_show_more/views_show_more'
+      view_name: "t13_loultimo_seccion",
+      view_display_id: "page_1",
+      view_args: "",
+      view_path: "/lo-ultimo",
+      view_base_path: "lo-ultimo",
+      view_dom_id: "2f9e6a936fa9215c52b1d4e9c098bccf19bc6da3191da3d4139b7a32ef76902d",
+      pager_element: "0",
+      page: "0",
+      _drupal_ajax: "1",
+      "ajax_page_state[theme]": "t13_v1",
+      "ajax_page_state[theme_token]": "",
+      "ajax_page_state[libraries]": "ads13/ads-management,system/base,views/views.ajax,views/views.module,views_show_more/views_show_more",
     });
 
     const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      'Accept': 'application/json, text/javascript, */*; q=0.01',
-      'X-Requested-With': 'XMLHttpRequest',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36', // Mimic browser
-      // Add other headers from your curl command if necessary (e.g., Referer)
-      'Referer': 'https://www.t13.cl/lo-ultimo' 
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     };
 
     try {
-      const response = await axios.post<AjaxResponseItem[]>(this.ajaxUrl, formData.toString(), { headers });
-
-      if (Array.isArray(response.data) && response.data.length > 1) {
-        // Find the element with the HTML data (assuming it's the second one with command 'viewsShowMore')
-        const viewData = response.data.find(item => item.command === 'viewsShowMore');
-        if (viewData && typeof viewData.data === 'string') {
-          return viewData.data; // Return the HTML string
-        }
+      const response = await axios.post<AjaxResponseItem[]>(this.url, formData, { headers });
+      if (Array.isArray(response.data)) {
+        return response.data;
       }
-      console.error(`Could not find expected HTML data in AJAX response from ${this.ajaxUrl}`);
+      console.error("List response data is not an array:", response.data);
       return null;
     } catch (error) {
-      console.error(`Error fetching AJAX data from ${this.ajaxUrl}:`, error);
+      console.error(`Error fetching article list AJAX data from ${this.url}:`, error);
       return null;
     }
   }
 
-  protected async parse(html: string): Promise<ScrapedArticle[]> {
-    console.log(`Parsing HTML from ${this.ajaxUrl}...`);
+  // Parses the list of articles from the AJAX response array
+  protected async parseList(responseData: AjaxResponseItem[]): Promise<ArticleListItem[]> {
+    console.log(`Attempting to parse article list response array...`);
+    const insertCommandData = responseData.find(item => item.command === 'insert');
+    const viewsShowMoreData = responseData.find(item => item.command === 'viewsShowMore');
+
+    let html: string | undefined;
+    if (insertCommandData && typeof insertCommandData.data === 'string') {
+      html = insertCommandData.data;
+      console.log("Found list data using 'insert' command.");
+    } else if (viewsShowMoreData && typeof viewsShowMoreData.data === 'string') {
+      html = viewsShowMoreData.data;
+      console.log("Found list data using 'viewsShowMore' command.");
+    } else {
+      console.error("Could not find 'insert' or 'viewsShowMore' command with HTML data in list response.");
+      return [];
+    }
+
+    return this.parseListHtml(html);
+  }
+
+  // Parses article list items from HTML
+  private parseListHtml(html: string): ArticleListItem[] {
     const $ = cheerio.load(html);
-    const articles: ScrapedArticle[] = [];
+    const articles: ArticleListItem[] = [];
+    const siteBaseUrl = 'https://www.t13.cl';
 
     $('a.card').each((_index, element) => {
       const card = $(element);
@@ -79,30 +88,71 @@ class TeleTreceScraper extends BaseScraper {
 
       if (title && relativeUrl) {
         try {
-          const url = new URL(relativeUrl, this.siteUrl).toString();
-          articles.push({ 
-            title, 
-            url, 
-            contentSnippet: timeString, // Use time string as snippet
-            // publishedDate: undefined // Parsing timeString to Date needs more logic
-          });
+          const url = new URL(relativeUrl, siteBaseUrl).toString();
+          articles.push({ title, url, time: timeString || undefined });
         } catch (e) {
-          console.error(`Error constructing URL for ${relativeUrl}:`, e);
+          console.error(`Error constructing URL for list item ${relativeUrl}:`, e);
         }
       }
     });
-
-    console.log(`Parsed ${articles.length} articles.`);
+    console.log(`Parsed ${articles.length} article list items from HTML.`);
     return articles;
   }
 
-  protected async filterAndTag(articles: ScrapedArticle[]): Promise<ScrapedArticle[]> {
-     console.log(`Filtering and tagging ${articles.length} articles from ${this.siteUrl}...`);
-     // Placeholder: No filtering/tagging applied yet
-     return articles;
+  // Optional filter/tag step for the *detailed* articles
+  protected async filterAndTag(articles: ScrapedArticleDetail[]): Promise<ScrapedArticleDetail[]> {
+    console.log(`Filtering and tagging ${articles.length} detailed articles...`);
+    // Add any filtering/tagging logic for the full articles here
+    return articles;
   }
 
-  // Inherits the public scrape() method which calls fetchHtml, parse, and filterAndTag.
+  // Main method to scrape the list and then individual articles
+  public async scrape(): Promise<ScrapedArticleDetail[]> {
+    const listResponseData = await this.fetchListHtml(); // Fetch the list
+
+    if (!listResponseData) {
+      console.error("Scraping failed: No list response data received");
+      return [];
+    }
+
+    let articleListItems: ArticleListItem[] = [];
+    try {
+      articleListItems = await this.parseList(listResponseData); // Parse the list
+    } catch (error) {
+      console.error("Error parsing article list:", error);
+      return [];
+    }
+
+    if (articleListItems.length === 0) {
+        console.log("No article list items found to scrape details for.");
+        return [];
+    }
+
+    console.log(`Found ${articleListItems.length} articles in list. Scraping details...`);
+    const articleScraper = new TeleTreceArticleScraper();
+    const detailedArticlesPromises = articleListItems.map(item => 
+        articleScraper.scrapeArticle(item.url) // Call the article scraper for each URL
+    );
+
+    // Wait for all article scraping promises to resolve
+    const detailedArticlesResults = await Promise.all(detailedArticlesPromises);
+
+    // Filter out any null results (errors during individual scraping)
+    const successfulDetailedArticles = detailedArticlesResults.filter(
+        (article): article is ScrapedArticleDetail => article !== null
+    );
+
+    console.log(`Successfully scraped details for ${successfulDetailedArticles.length} articles.`);
+
+    // Run the final filter/tag step on the detailed articles
+    try {
+        const finalArticles = await this.filterAndTag(successfulDetailedArticles);
+        return finalArticles;
+    } catch (error) {
+        console.error("Error during final filtering/tagging:", error);
+        return successfulDetailedArticles; // Return successfully scraped articles even if filtering fails
+    }
+  }
 }
 
-export default TeleTreceScraper; 
+export default TeleTreceScraper;
