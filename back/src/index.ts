@@ -2,6 +2,10 @@ import 'reflect-metadata'; // Required by routing-controllers
 import express from 'express';
 import { useExpressServer } from 'routing-controllers';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env' });
+
 
 const app = express();
 const port = process.env.PORT || 3000;

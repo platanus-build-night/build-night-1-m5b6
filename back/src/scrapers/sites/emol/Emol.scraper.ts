@@ -49,14 +49,12 @@ class EmolScraper {
   private async fetchPage(from: number): Promise<EmolApiResponse | null> {
     const url = `${EmolScraper.BASE_URL}${EmolScraper.ENDPOINT}/nacional/0`;
     const params = { size: this.pageSize, from };
-    console.log(`Fetching EMOL page: from=${from}, size=${this.pageSize}`);
 
     try {
       const response = await axios.get<EmolApiResponse>(url, { params });
       return response.data;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`Error fetching EMOL data (from=${from}): ${message}`);
       return null;
     }
   }

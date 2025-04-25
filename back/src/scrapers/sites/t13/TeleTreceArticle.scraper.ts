@@ -4,7 +4,6 @@ import { ScrapedArticleDetail, AuthorSource } from "../../types";
 
 class TeleTreceArticleScraper {
   private async fetchArticleHtml(url: string): Promise<string | null> {
-    console.log(`Fetching article HTML from: ${url}`);
     try {
       // Simple GET request, mimic browser User-Agent
       const response = await axios.get<string>(url, {
@@ -22,7 +21,6 @@ class TeleTreceArticleScraper {
       console.error(`Fetched data is not a string from ${url}`);
       return null;
     } catch (error) {
-      console.error(`Error fetching article HTML from ${url}:`, error);
       return null;
     }
   }

@@ -59,7 +59,7 @@ export default function Home() {
 
   // Calculate positioning for orbiting categories
   const numCategories = mockCategories.length
-  const orbitRadius = 250 // Adjust as needed for desired spacing
+  const orbitRadius = 300 // Increased radius for a larger orbit
   const angleStep = (2 * Math.PI) / numCategories
 
   return (
@@ -67,21 +67,25 @@ export default function Home() {
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-white dark:bg-black text-black dark:text-white overflow-hidden">
       {/* Center Content Area */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
-          <div className="flex flex-col items-center text-center">
-              <h1 className="text-3xl font-medium font-serif mb-4 pointer-events-auto">houp.cl</h1>
-              <DayNightVisor isDaytime={isDaytime} timeUntilChange={timeUntilChange} />
-              {isDaytime && (
-                <div className="mt-4 max-w-sm pointer-events-auto">
-                  <FeaturedHeadline headline={mockFeaturedHeadline.headline} digest={mockFeaturedHeadline.digest} />
-                </div>
-              )}
-          </div>
+        <div className="flex flex-col items-center text-center">
+          <h1 className="text-3xl font-medium font-serif mb-4 pointer-events-auto">houp.cl</h1>
+          <DayNightVisor isDaytime={isDaytime} timeUntilChange={timeUntilChange} />
+          {isDaytime && (
+            <div className="mt-4 max-w-sm pointer-events-auto">
+              {/* <FeaturedHeadline headline={mockFeaturedHeadline.headline} digest={mockFeaturedHeadline.digest} /> */}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Orbiting Categories Container */}
+      {/* Orbiting Categories Container - Explicitly Centered */}
       <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ width: `${orbitRadius * 2}px`, height: `${orbitRadius * 2}px` }}
+        className="absolute planet"
+        style={{
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        }}
         animate={{ rotate: 360 }} // Continuous rotation
         transition={{ ease: "linear", duration: 60, repeat: Infinity }} // Adjust duration for speed
       >
@@ -93,17 +97,17 @@ export default function Home() {
           return (
             <motion.div
               key={category.id}
-              className="absolute"
+              className="absolute planet"
               style={{
-                // Position origin at the center of the container, then translate out
-                left: '50%', 
+                left: '50%',
                 top: '50%',
                 x: x - 40, // Center the card (half of w-20)
-                y: y - 40, // Center the card (half of h-20)
+                y: y - 40, // Center the card (half of h-20),
+                pointerEvents: 'auto' // Make cards interactive
               }}
               // Counter-rotate the card itself to keep it upright
               animate={{ rotate: -360 }}
-              transition={{ ease: "linear", duration: 60, repeat: Infinity }} 
+              transition={{ ease: "linear", duration: 60, repeat: Infinity }}
             >
               <CategoryCard category={category} />
             </motion.div>
@@ -111,15 +115,15 @@ export default function Home() {
         })}
       </motion.div>
 
-      {/* Night overlay or alternative display */} 
+      {/* Night overlay or alternative display */}
       {!isDaytime && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
-            <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
-            <h2 className="text-2xl font-medium text-white mb-2">Houp is resting</h2>
-            <p className="text-gray-400 max-w-md text-center">
-                We're closed for the night. Return after sunrise for your daily dose of positive news.
-            </p>
-            <p className="mt-2 text-sm text-indigo-300">{timeUntilChange}</p>
+          <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
+          <h2 className="text-2xl font-medium text-white mb-2">Houp is resting</h2>
+          <p className="text-gray-400 max-w-md text-center">
+            We're closed for the night. Return after sunrise for your daily dose of positive news.
+          </p>
+          <p className="mt-2 text-sm text-indigo-300">{timeUntilChange}</p>
         </div>
       )}
 

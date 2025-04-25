@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { ScrapedArticleDetail, AuthorSource } from '../scrapers/types';
+import { z } from "zod";
+import { ScrapedArticleDetail, AuthorSource } from "../scrapers/types";
 
 // Zod schema for input validation
 export const ScrapedArticleDetailSchema = z.object({
@@ -15,25 +15,17 @@ export const ArticleAnalysisInputSchema = z.object({
 });
 
 export enum Sentiment {
-  Positive = 'Positive',
-  Negative = 'Negative',
-  Neutral = 'Neutral',
+  Positive = "Positive",
+  Negative = "Negative",
+  Neutral = "Neutral",
 }
 
 export enum Topic {
-  Nature = 'Nature',
-  Social = 'Social',
-  Science = 'Science',
-  Technology = 'Technology',
-  Health = 'Health',
-  Arts = 'Arts',
+  Nature = "Nature",
+  Social = "Social",
+  Science = "Science",
+  Technology = "Technology",
+  Health = "Health",
+  Arts = "Arts",
 }
 
-export interface ArticleAnalysisInput {
-  article: ScrapedArticleDetail;
-}
-
-export interface ArticleAnalysisOutput {
-  sentiment: Sentiment;
-  topic: Topic;
-} 

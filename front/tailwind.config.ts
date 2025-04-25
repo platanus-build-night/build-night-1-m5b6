@@ -9,6 +9,11 @@ const config: Config = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    {
+      pattern: /(w|h)-(12|14|16|18|20|22|24)/,
+    },
+  ],
   theme: {
     container: {
       center: true,
