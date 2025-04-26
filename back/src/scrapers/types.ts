@@ -6,6 +6,7 @@ export enum AuthorSource {
   LaTercera = "LaTercera",
   ElPais = "ElPais",
   ElMostrador = "ElMostrador",
+  LaNacion = "LaNacion",
 }
 
 export interface ScrapedArticleDetail {

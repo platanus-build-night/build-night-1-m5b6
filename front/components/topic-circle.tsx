@@ -4,10 +4,10 @@ import { getTopicGradient, getTopicIcon, topicNames } from "@/lib/topic-metadata
 import { motion } from "framer-motion"
 import * as HeroIconsOutline from "@heroicons/react/24/outline"
 import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline"
-import { useArticles } from "@/hooks/useArticles"
 
 interface TopicCardProps {
   topic: Topic
+  articleCount: number
   onClick: () => void
 }
 
@@ -25,20 +25,13 @@ const IconComponent = ({ name, className }: { name: string; className?: string }
   return <Icon className={finalClassName} />
 }
 
-const getTopicCount = (topic: Topic) => {
-  const { articles } = useArticles()
-  const topicArticles = articles.filter((article) => article.topic === topic)
-  return topicArticles.length
-}
-
-export default function TopicCircle({ topic, onClick }: TopicCardProps) {
+export default function TopicCircle({ topic, articleCount, onClick }: TopicCardProps) {
   // Calculate size in rem based on article count
-  const baseSizeRem = 5; // 12 * 0.25rem
-  const sizeIncrementRem = 2.25; // 2 * 0.25rem
-  const articleCount = getTopicCount(topic)
+  const baseSizeRem = 9; // Increased base size
+  const sizeIncrementRem = 0.15; // Adjusted increment
   const dynamicSizeRem = baseSizeRem + articleCount * sizeIncrementRem;
   // Cap the size to avoid excessively large cards
-  const maxSizeRem = 8; // 24 * 0.25rem
+  const maxSizeRem = 11; // Increased max size
   const finalSizeRem = Math.min(dynamicSizeRem, maxSizeRem);
 
   // Get metadata using the new functions

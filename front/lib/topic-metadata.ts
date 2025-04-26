@@ -10,6 +10,15 @@ export const topicNames: Record<Topic, string> = {
   business: "Negocios",
 };
 
+export const topicPhonetics: Record<Topic, string> = {
+  social:  "soh-SYAL",       // Social
+  science: "SYEN-sya",       // Ciencia
+  tech:    "tek-no-lo-HEE-ah",// Tecnología
+  arts:    "AR-tes",          // Artes
+  sports:  "de-POR-tes",      // Deportes
+  business:"ne-GO-sjos",     // Negocios
+};
+
 
 export const getTopicGradient = (topic: Topic): string => {
   switch (topic) {

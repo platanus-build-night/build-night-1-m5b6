@@ -9,11 +9,40 @@ import FeaturedHeadline from "@/components/featured-headline"
 import TopicCard from "@/components/topic-circle" // Assuming this is the correct component
 import { motion, AnimatePresence } from "framer-motion"
 import DayNightVisor from "@/components/day-night-visor"
-import { useArticles } from "../hooks/useArticles";
-import { Topic } from "@/lib/types"
+import { useArticlesContext } from "@/context/ArticlesContext"; // Use context
+import { Topic, Article } from "@/lib/types"
 import { getTopicGradient, topicNames } from "@/lib/topic-metadata" // Import helpers
 import Footer from "@/components/footer"
 import FullscreenTransition from "@/components/fullscreen-transition"; // Import the new component
+
+const ORBIT_ROTATION_DURATION = 225;
+
+// Define animation variants
+const containerVariants = {
+  initial: { rotate: 0 }, // Start rotation at 0
+  animate: {
+    rotate: 360, // Add rotation back
+    transition: {
+      // Rotation transition
+      rotate: {
+        ease: "linear",
+        duration: ORBIT_ROTATION_DURATION,
+        repeat: Infinity,
+      },
+      // Stagger for children entry
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const itemVariants = {
+  initial: { opacity: 0, scale: 0.5 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 20 }
+  },
+};
 
 // Define the shape of the selected topic data
 interface SelectedTopicData {
@@ -25,9 +54,13 @@ interface SelectedTopicData {
 
 export default function Home() {
   const router = useRouter() // Initialize router
-  // Fetch articles and topics data
-  // Use correct return values from hook
-  const { articles, topics, loading, error } = useArticles();
+  // Fetch articles and topics data using context
+  const {
+    articles,
+    topics,
+    loading,
+    error
+  } = useArticlesContext(); // Use context hook
 
   // Remove mode and expandedCategory state
   const [isDaytime, setIsDaytime] = useState(true)
@@ -37,6 +70,19 @@ export default function Home() {
   // State for the selected topic animation
   const [selectedTopicData, setSelectedTopicData] = useState<SelectedTopicData | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false); // New state for triggering animations
+
+  // Calculate topic counts ONCE after loading is finished
+  const [topicCountsMap, setTopicCountsMap] = useState<Record<Topic, number> | null>(null);
+
+  useEffect(() => {
+    if (!loading && articles.length > 0) {
+      const counts: Record<Topic, number> = {} as Record<Topic, number>;
+      articles.forEach(article => {
+        counts[article.topic] = (counts[article.topic] || 0) + 1;
+      });
+      setTopicCountsMap(counts);
+    }
+  }, [loading, articles]);
 
   // Run once on mount to set initial state
   useEffect(() => {
@@ -111,7 +157,7 @@ export default function Home() {
 
   // Calculate positioning for orbiting TOPICS
   const numTopics = topics.length // Use topics length
-  const orbitRadius = 300
+  const orbitRadius = 300 // Increased radius
   const angleStep = numTopics > 0 ? (2 * Math.PI) / numTopics : 0 // Use numTopics
 
   // Handle click on TopicCard
@@ -124,13 +170,13 @@ export default function Home() {
   };
 
   // Handle Loading State
-  if (loading) {
+  if (loading || topicCountsMap === null) { // Also wait for counts to be calculated
     return (
       // Maintain main layout structure but only show title
       <div className="flex flex-col min-h-screen bg-white dark:bg-black text-black dark:text-white">
         <main className="relative flex-grow flex flex-col items-center justify-center p-6 overflow-hidden">
           {/* Only the title centered */}
-          <h1 className="text-3xl font-medium font-serif mb-4">houp.cl</h1>
+          <h1 className="text-5xl font-bold font-serif mb-4">houp.cl</h1>
         </main>
         {/* Footer is omitted during loading for simplicity */}
       </div>
@@ -159,15 +205,29 @@ export default function Home() {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           style={{ pointerEvents: isTransitioning ? 'none' : 'auto' }} // Disable interactions during fade out
         >
+          <div className="absolute top-5 z-10">
+            <DayNightVisor />
+          </div>
           {/* Center Content Area */}
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
             <div className="flex flex-col items-center text-center">
-              <h1 className="text-3xl font-medium font-serif mb-4 pointer-events-auto">houp.cl</h1>
-              <DayNightVisor />
+              <h1 className="text-5xl font-bold font-serif mb-1 pointer-events-auto">houp.cl</h1>
+              <small className="text-sm font-normal mb-4 pointer-events-auto">/həʊp/</small>
 
             </div>
           </div>
 
+          {/* Orbit Outline */}
+          <div
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                       border border-gray-200/50 dark:border-gray-600/50 rounded-full pointer-events-none z-0"
+            style={{
+              width: `${orbitRadius * 2}px`,
+              height: `${orbitRadius * 2}px`,
+            }}
+          ></div>
+
+          {/* Orbiting Topics Container - Add variants */}
           <motion.div
             className="absolute planet"
             style={{
@@ -175,8 +235,12 @@ export default function Home() {
               left: '50%',
               transform: 'translate(-50%, -50%)'
             }}
-            animate={{ rotate: 360 }}
-            transition={{ ease: "linear", duration: 200, repeat: Infinity }}
+            variants={containerVariants} // Apply container variants
+            initial="initial"
+            animate="animate"
+          // Removed rotating animation from parent
+          // animate={{ rotate: 360 }}
+          // transition={{ ease: "linear", duration: 200, repeat: Infinity }}
           >
             {topics.map((topic, index) => {
               const angle = angleStep * index - Math.PI / 2
@@ -185,12 +249,13 @@ export default function Home() {
 
               const gradient = getTopicGradient(topic);
               const name = topicNames[topic] || topic;
-              // const layoutId = `topic-${topic}`; // No longer needed
+              const count = topicCountsMap[topic] || 0; // Get count from calculated map
 
               return (
+                // Apply item variants to this motion.div
                 <motion.div
                   key={topic}
-                  className="absolute"
+                  className="absolute z-10" // Ensure topics are above the orbit line
                   style={{
                     left: '50%',
                     top: '50%',
@@ -198,19 +263,21 @@ export default function Home() {
                     y: `calc(-50% + ${y}px)`,
                     pointerEvents: 'auto'
                   }}
-                  initial={{ opacity: 1 }} // Start visible
+                  variants={itemVariants} // Apply item variants
+                // initial/animate are inherited from parent with stagger
+                // initial={{ opacity: 1 }} // Remove direct initial state
                 >
-                  {/* Inner div handles the counter-rotation */}
-                  <motion.div
-                    animate={{ rotate: -360 }}
-                    transition={{ ease: "linear", duration: 199, repeat: Infinity }}
-                  >
+                  {/* Inner div handles the counter-rotation */} 
+                  <motion.div 
+                    animate={{ rotate: -360 }} // Counter-rotate
+                    transition={{ ease: "linear", duration: ORBIT_ROTATION_DURATION, repeat: Infinity }}
+                  > 
                     <TopicCard
                       topic={topic}
-                      // layoutId={layoutId} // Remove layoutId
+                      articleCount={count} // Pass calculated count
                       onClick={() => handleTopicClick({ topic, gradient, name })} // Call new handler
                     />
-                  </motion.div>
+                  </motion.div> 
                 </motion.div>
               )
             })}
@@ -225,7 +292,7 @@ export default function Home() {
               onFadeInComplete={() => {
                 // Ensure navigation only happens once animation is fully complete
                 if (selectedTopicData?.topic) {
-                    router.push(`/${selectedTopicData.topic}`);
+                  router.push(`/${selectedTopicData.topic}`);
                 }
               }}
             />

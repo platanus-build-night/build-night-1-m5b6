@@ -5,7 +5,12 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Article, AuthorSource } from "@/lib/types";
 import { getTopicGradient, getLightTopicGradient, sourceIcon   } from "@/lib/topic-metadata";
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid';
+import {
+  ArrowTopRightOnSquareIcon,
+  FaceFrownIcon,
+  UserIcon, // Using UserIcon for neutral
+  FaceSmileIcon 
+} from '@heroicons/react/24/outline'; // Using outline for consistency
 
 const cleanTitle = (t: string) =>
   t
@@ -51,10 +56,18 @@ const highlightMatches = (text: string, query: string, highlightBackground: stri
 // Helper function to get color based on score (0-100)
 const getScoreColor = (score: number | undefined): string => {
   if (score === undefined || score < 0 || score > 100) {
-    return 'hsl(0, 0%, 60%)'; 
+    return 'hsl(0, 0%, 60%)'; // Default gray
   }
-  const hue = (score / 100) * 120;
-  return `hsl(${hue}, 90%, 40%)`;
+  const hue = (score / 100) * 120; // 0-100 maps to 0-120 (red to green)
+  return `hsl(${hue}, 70%, 45%)`; // Adjusted saturation/lightness slightly
+};
+
+// Helper function to get sentiment icon based on score
+const getSentimentIcon = (score: number | undefined): React.ElementType => {
+  if (score === undefined) return UserIcon; // Default to neutral if no score
+  if (score < 40) return FaceFrownIcon;
+  if (score < 70) return UserIcon;
+  return FaceSmileIcon;
 };
 
 interface ArticleCardProps {
@@ -76,13 +89,12 @@ export default function ArticleCard({ article, index, pageIndex, searchQuery, la
   const lightGradientValue = getLightTopicGradient(topicValue); // Get light gradient
 
   // Format sentiment score as percentage
-  const scoreValue = article.score; // Assuming article.score is 0-100
+  const scoreValue = article.score;
   const formattedScore = scoreValue !== undefined
-    ? `${Math.round(scoreValue)}%`
+    ? `${Math.round(scoreValue)}` // Just the number for the badge
     : null;
-  
-  // Get color based on score
-  const scoreColor = getScoreColor(scoreValue);
+  const scoreColor = getScoreColor(scoreValue); 
+  const SentimentIcon = getSentimentIcon(scoreValue); // Get the icon component
 
   // Hide card content immediately during expansion animation
   const visibilityClass = isExpanded ? 'invisible' : 'visible';
@@ -136,8 +148,8 @@ export default function ArticleCard({ article, index, pageIndex, searchQuery, la
 
         {/* Footer - Add relative positioning */}
         <div className="relative flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mt-auto pt-4">
-          {/* Left side: Icon + Score */}
-          <div className="flex items-center gap-2"> {/* Group icon and score */}
+          {/* Left side: Source Icon + Sentiment Icon & Badge */}
+          <div className="flex items-center gap-3"> {/* Increased gap slightly */}
             {/* Source Icon */}
             {symbol ? (
               <span className="text-lg text-gray-500">
@@ -155,15 +167,24 @@ export default function ArticleCard({ article, index, pageIndex, searchQuery, la
                 />
               ) : null // Render nothing if src is also missing
             )}
-            {/* Sentiment Score - Apply dynamic color */}
-            {formattedScore !== null && (
-              <span 
-                className="font-semibold text-xs" // Use font-semibold for visibility
-                style={{ color: scoreColor }} // Apply color via inline style
-              >
-                {formattedScore}
-              </span>
-            )}
+            
+            {/* Sentiment Icon & Badge Container */}
+            <div className="relative">
+              <SentimentIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+              {/* Score Badge */}
+              {formattedScore !== null && (
+                <span 
+                  className="absolute -top-1.5 -right-1.5 
+                             min-w-[16px] h-4 px-1 flex items-center justify-center 
+                             rounded-full text-[9px] font-medium text-white
+                             ring-1 ring-white dark:ring-gray-900/80 shadow-sm"
+                  style={{ backgroundColor: scoreColor }} // Use scoreColor for badge background
+                  title={`${Math.round(scoreValue!)}%`}
+                >
+                  {formattedScore}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Shortcut Hint (Bottom Center) */}

@@ -18,14 +18,13 @@ const Footer: React.FC = () => {
     }
 
     return (
-        <footer className="w-full py-4 text-center font-serif text-xs text-gray-500 absolute bottom-0 dark:text-gray-400">
+        <footer className="w-full py-4 text-center font-serif text-xs text-black absolute bottom-0 dark:text-gray-400">
             <p>
-                <b className="text-red-300">
+                <b className="text-red-700 dark:text-red-400">
                     {filteredNegativeCount}
                 </b> noticias negativas fueron suprimidas para proteger tu calma.
-            </p>
-            <p className="mt-1">
-                <b className="text-blue-300">
+                &nbsp;
+                <b className="text-green-700 dark:text-green-400">
                     {filteredPositiveCount}
                 </b> noticias informan.
             </p>

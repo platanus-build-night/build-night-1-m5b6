@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import DayNightVisor from "@/components/day-night-visor";
 import Footer from "@/components/footer";
-import { useArticles } from "@/hooks/useArticles";
+import { useArticlesContext } from "@/context/ArticlesContext"; // Import context hook
 import { Topic, Article } from "@/lib/types"; // Import Article type
 import { getTopicGradient, topicNames, getTopicIcon } from "@/lib/topic-metadata"; // Use original gradient
 // Import specific Heroicons dynamically later or directly if few
@@ -13,7 +13,7 @@ import * as HeroIconsSolid from '@heroicons/react/24/solid';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'; // Import pagination icons and search icon
 import ArticleCard from "@/components/article-card"; // Import the new component
 import ExpandedArticleView from "@/components/expanded-article-view"; // Import new component
-import AuthorFilterSidebar from "@/components/author-filter-sidebar"; // Import sidebar
+import AuthorFilterPill from "@/components/author-filter-sidebar"; // Corrected import path
 // import MovingTitlesBackground from "@/components/moving-titles-background"; // Import the new component
 
 // Combine icon sets for easier lookup
@@ -21,6 +21,30 @@ const allIcons = { ...HeroIconsSolid };
 
 // Constants
 const ITEMS_PER_PAGE = 4;
+
+const ORBIT_ROTATION_DURATION = 225; // Assuming this might be used elsewhere, keeping it
+
+// Define animation variants for page content entry
+const pageContainerVariants = {
+  initial: { opacity: 0 },
+  animate: { 
+    opacity: 1,
+    transition: { 
+      duration: 0.3,
+      // Stagger the children animations
+      staggerChildren: 0.1 // Adjust stagger delay as needed
+    }
+  },
+};
+
+const contentEntryVariant = {
+  initial: { opacity: 0, y: 15 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" }
+  },
+};
 
 // Define slide variants
 const slideVariants = {
@@ -60,13 +84,15 @@ export default function TopicPage() {
     const router = useRouter();
     const { topic: topicParam } = params; // Get topic from URL
     const {
-        articles, // This list is now author-filtered by the hook
+        articles, // This list is now author-filtered by the context
         allAuthors,
         selectedAuthors,
         updateSelectedAuthors,
+        totalCountsPerAuthor, // Get total counts
+        topicCountsPerAuthor, // Get all topic counts
         loading,
         error
-    } = useArticles();
+    } = useArticlesContext(); // Use context hook
 
     const [topicGradient, setTopicGradient] = useState<string>("");
     const [topicDisplayName, setTopicDisplayName] = useState<string>("");
@@ -225,7 +251,7 @@ export default function TopicPage() {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    // Dependencies: Include everything needed to calculate articlesOnPage and check state
+        // Dependencies: Include everything needed to calculate articlesOnPage and check state
     }, [displayedArticles, currentPage, expandedArticleId]);
 
     // Calculate pagination based on DISPLAYED articles
@@ -274,6 +300,11 @@ export default function TopicPage() {
         (article) => article.id === expandedArticleId
     );
 
+    // --- Get current topic and counts for sidebar --- 
+    const currentTopicCounts = currentTopic && topicCountsPerAuthor[currentTopic]
+        ? topicCountsPerAuthor[currentTopic]
+        : {};
+
     // Handle Error State First (if an error occurs, we likely don't want to show content)
     if (error) {
         return (
@@ -285,7 +316,7 @@ export default function TopicPage() {
         );
     }
 
-    // Main component render with animated loading overlay
+    // Main component render when data is loaded
     return (
         <>
             <AnimatePresence>
@@ -316,106 +347,121 @@ export default function TopicPage() {
                             router.push('/');
                         }}
                     >
-                        <h1 className="font-serif text-4xl text-black">houp.cl</h1>
+                        <div className="flex flex-col items-center text-center">
+                            <h1 className="text-5xl font-bold font-serif mb-1 pointer-events-auto">houp.cl</h1>
+                            <small className="text-sm font-normal mb-4 pointer-events-auto">/həʊp/</small>
+
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Main content container - fades in when ready, fades out when navigating back */}
+            {/* Main content container - apply pageContainerVariants */} 
             <motion.div
                 className="flex flex-col min-h-screen"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: isReady && !isNavigatingBack && !expandedArticleId ? 1 : 0.5 }}
-                transition={{ duration: 0.3 }}
+                variants={pageContainerVariants} // Apply container variants
+                initial="initial" // Start faded out
+                animate={isReady && !isNavigatingBack ? "animate" : "initial"} // Animate in when ready
+                // Remove direct opacity animation, handled by variants now
+                // initial={{ opacity: 0 }}
+                // animate={{ opacity: isReady && !isNavigatingBack && !expandedArticleId ? 1 : 0.5 }}
+                // transition={{ duration: 0.3 }}
             >
-                <motion.main
+                <motion.main 
+                    // Inherit variants from parent is fine, or apply specific ones if needed later
                     className="flex-grow flex flex-col items-center p-6 pb-16 relative overflow-visible bg-gray-50 dark:bg-gray-900"
                 >
-                    {/* Content Container */}
+                    {/* Content Container */} 
                     <div className="relative z-10 w-full max-w-4xl mx-auto flex-grow flex flex-col">
-                        {/* Header Area - Centered Chip */}
-                        <div className="flex justify-between items-center mb-4">
-                            <button
-                                onClick={handleBackClick} // Use the new handler
-                                className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-full p-2 transition-colors"
-                                aria-label="Volver al inicio"
-                            >
-                                <HeroIconsSolid.ArrowLeftIcon className="h-5 w-5" />
-                            </button>
-                            {/* Topic Chip */}
-                            <div
-                                className="inline-flex items-center space-x-3 px-4 py-2 rounded-full text-white shadow-md"
-                                style={{ background: topicGradient, backgroundSize: '200% 200%', animation: 'gradientMove 15s ease infinite' }} // Apply gradient here
-                            >
-                                {TopicIconComponent && <TopicIconComponent className="h-6 w-6 text-white" />} {/* Ensure white icon */}
-                                <h1 className="text-xl font-bold font-serif text-white"> {/* Ensure white text */}
-                                    {topicDisplayName}
-                                </h1>
-                            </div>
-                            <div className="w-8"> {/* Placeholder for balance */}
-                                {/* Potentially add DayNightVisor here if needed */}
-                            </div>
-                        </div>
-
-                        {/* Search Bar - Centered, Animated, Apple-like */}
-                        <div className=" flex justify-center items-center gap-2"> {/* Added gap */}
-                            {/* Animated container for input/icon/hint */}
-                            <motion.div
-                                className="relative max-w-lg" // Use max-w-lg or max-w-md as the constraint
-                                variants={searchBarVariants}
-                                animate={isSearchFocused ? "active" : "inactive"}
-                            >
-                                <input
-                                    ref={searchInputRef} // Assign ref
-                                    type="text"
-                                    placeholder={isSearchFocused ? "Buscar..." : "Buscar..."} // Change placeholder based on focus
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={handleSearchKeyDown}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    onBlur={() => setIsSearchFocused(false)}
-                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 pl-10 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" // Removed transition-all, rely on motion
-                                />
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        {/* Wrap Header/Search section */} 
+                        <motion.div variants={contentEntryVariant}> 
+                            {/* Header Area - Centered Chip */} 
+                            <div className="flex justify-between items-center mb-4">
+                                <button
+                                    onClick={handleBackClick} // Use the new handler
+                                    className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-full p-2 transition-colors"
+                                    aria-label="Volver al inicio"
+                                >
+                                    <HeroIconsSolid.ArrowLeftIcon className="h-5 w-5" />
+                                </button>
+                                {/* Topic Chip */}
+                                <div
+                                    className="inline-flex items-center space-x-3 px-4 py-2 rounded-full text-white shadow-md"
+                                    style={{ background: topicGradient, backgroundSize: '200% 200%', animation: 'gradientMove 15s ease infinite' }} // Apply gradient here
+                                >
+                                    {TopicIconComponent && <TopicIconComponent className="h-6 w-6 text-white" />} {/* Ensure white icon */}
+                                    <h1 className="text-xl font-bold font-serif text-white"> {/* Ensure white text */}
+                                        {topicDisplayName}
+                                    </h1>
                                 </div>
-                                {/* Cmd+K Hint - Show when inactive and empty */}
-                                {!isSearchFocused && !searchTerm && (
-                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-xs font-sans text-gray-400 dark:text-gray-500">
-                                            ⌘K
-                                        </kbd>
-                                    </div>
-                                )}
-                            </motion.div>
-                            {/* Submit Button */}
-                            <button
-                                onClick={handleSearchSubmit}
-                                style={{ background: topicGradient }} // Use topic gradient
-                                className="p-2 rounded-full text-white shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                                disabled={!searchTerm} // Disable if input is empty
-                                aria-label="Buscar"
-                            >
-                                <MagnifyingGlassIcon className="h-5 w-5" />
-                            </button>
-                        </div>
+                                <div className="w-8"> {/* Placeholder for balance */}
+                                    {/* Potentially add DayNightVisor here if needed */}
+                                </div>
+                            </div>
 
-                        {/* DayNightVisor - Placed below header, centered maybe? */}
+                            {/* Search Bar - Centered, Animated, Apple-like */} 
+                            <div className=" flex justify-center items-center gap-2 mb-4"> {/* Added bottom margin */} 
+                                {/* Animated container for input/icon/hint */}
+                                <motion.div
+                                    className="relative max-w-lg" // Use max-w-lg or max-w-md as the constraint
+                                    variants={searchBarVariants}
+                                    animate={isSearchFocused ? "active" : "inactive"}
+                                >
+                                    <input
+                                        ref={searchInputRef} // Assign ref
+                                        type="text"
+                                        placeholder={isSearchFocused ? "Buscar..." : "Buscar..."} // Change placeholder based on focus
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={handleSearchKeyDown}
+                                        onFocus={() => setIsSearchFocused(true)}
+                                        onBlur={() => setIsSearchFocused(false)}
+                                        className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 pl-10 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" // Removed transition-all, rely on motion
+                                    />
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                    </div>
+                                    {/* Cmd+K Hint - Show when inactive and empty */}
+                                    {!isSearchFocused && !searchTerm && (
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-xs font-sans text-gray-400 dark:text-gray-500">
+                                                ⌘K
+                                            </kbd>
+                                        </div>
+                                    )}
+                                </motion.div>
+                                {/* Submit Button */}
+                                <button
+                                    onClick={handleSearchSubmit}
+                                    style={{ background: topicGradient }} // Use topic gradient
+                                    className="p-2 rounded-full text-white shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    disabled={!searchTerm} // Disable if input is empty
+                                    aria-label="Buscar"
+                                >
+                                    <MagnifyingGlassIcon className="h-5 w-5" />
+                                </button>
+                            </div>
+                        </motion.div> {/* End Header/Search Wrapper */} 
+
+                        {/* DayNightVisor - Placed below header, centered maybe? */} 
                         <div className="flex justify-center my-4">
                             {/* Consider if DayNightVisor is needed here or handled globally */}
                             {/* <DayNightVisor /> */}
                         </div>
 
-                        {/* Articles Container Wrapper - Removed overflow-hidden */}
-                        <div className="relative flex flex-grow items-center justify-center"> {/* Removed overflow-hidden */}
-                            {/* AnimatePresence for sliding grid */}
+                        {/* Wrap Articles Container */} 
+                        <motion.div 
+                            variants={contentEntryVariant} 
+                            className="relative flex flex-grow items-center justify-center" // Added class here
+                        >
+                            {/* AnimatePresence for sliding grid */} 
                             <AnimatePresence initial={false} custom={slideDirection}>
-                                {/* Grid container */}
+                                {/* Grid container - animations here are for pagination */} 
                                 <motion.div
-                                    key={currentPage + activeSearchQuery} // Use activeSearchQuery in key
-                                    className={`absolute flex flex-wrap justify-center gap-6 ${expandedArticleId ? 'pointer-events-none' : ''}`} // Disable clicks on grid when expanded
+                                    key={currentPage + activeSearchQuery} 
+                                    className={`absolute flex flex-wrap justify-center gap-6 ${expandedArticleId ? 'pointer-events-none' : ''}`} 
                                     custom={slideDirection}
-                                    variants={slideVariants}
+                                    variants={slideVariants} // Keep pagination variants
                                     initial="initial"
                                     animate="animate"
                                     exit="exit"
@@ -440,7 +486,7 @@ export default function TopicPage() {
                                     )}
                                 </motion.div>
                             </AnimatePresence>
-                        </div>
+                        </motion.div> {/* End Articles Container Wrapper */} 
                     </div>
                 </motion.main>
 
@@ -488,10 +534,13 @@ export default function TopicPage() {
 
             {/* Author Filter Sidebar - Render outside main content flow */}
             {!loading && allAuthors.length > 0 && (
-                <AuthorFilterSidebar
+                <AuthorFilterPill
                     allAuthors={allAuthors}
                     selectedAuthors={selectedAuthors}
                     onSelectionChange={updateSelectedAuthors}
+                    totalCounts={totalCountsPerAuthor} // Pass total counts
+                    topicCounts={currentTopicCounts} // Pass counts for current topic
+                    currentTopic={currentTopic} // Pass current topic
                 />
             )}
         </>
