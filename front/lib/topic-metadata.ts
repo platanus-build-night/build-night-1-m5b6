@@ -2,37 +2,116 @@ import { Topic } from "./types"; // Import the Topic enum
 
 // --- Topic Metadata Mappings ---
 export const topicNames: Record<Topic, string> = {
-  "social": "Social",
-  "science": "Ciencia",
-  "tech": "Tecnología",
-  "arts": "Artes",
-  "sports": "Deportes",
-  "business": "Negocios",
+  social: "Social",
+  science: "Ciencia",
+  tech: "Tecnología",
+  arts: "Artes",
+  sports: "Deportes",
+  business: "Negocios",
 };
+
 
 export const getTopicGradient = (topic: Topic): string => {
   switch (topic) {
     case "social":
-      // Warm Pink to Light Orange
-      return "linear-gradient(135deg, #ff9a9e, #fad0c4)";
+      // Warm community glow with two radial "bursts"
+      return `
+        radial-gradient(circle at 30% 30%, rgba(255,95,109,0.85) 0%, rgba(215,35,75,0.85) 60%, rgba(158,23,57,0.9) 100%),
+        radial-gradient(circle at 70% 70%, rgba(255,195,113,0.6) 0%, transparent 70%)
+      `.trim();
+
     case "science":
-      // Deep Blue to Purple
-      return "linear-gradient(135deg, #2b5876, #4e4376)";
+      // Fresh discovery spectrum
+      return `
+        radial-gradient(circle at 40% 40%, rgba(33,147,176,0.9) 0%, rgba(15,75,102,0.85) 70%, rgba(10,50,80,0.9) 100%),
+        radial-gradient(circle at 65% 65%, rgba(109,213,237,0.6) 0%, transparent 80%)
+      `.trim();
+
     case "tech":
-      // Electric Pink/Purple to Vibrant Blue
-      return "linear-gradient(135deg, #f953c6, #b91d73)";
+      // Electric pulse with bright core and dark outer
+      return `
+        radial-gradient(circle at center, rgba(0,195,255,0.9) 0%, rgba(0,80,110,0.85) 60%, rgba(0,40,60,0.9) 100%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,28,0.5) 0%, transparent 80%)
+      `.trim();
+
     case "arts":
-      // Light Green to Soft Aqua/Blue
-      return "linear-gradient(135deg, #a8ff78, #78ffd6)";
+      // Creative pastel sunrise reversed for contrast
+      return `
+        radial-gradient(circle at 25% 25%, rgba(255,154,139,0.8) 0%, rgba(200,100,110,0.8) 60%, rgba(140,50,70,0.9) 100%),
+        radial-gradient(circle at 75% 75%, rgba(255,106,136,0.5) 0%, transparent 70%)
+      `.trim();
+
     case "sports":
-      // Fiery Orange to Bold Red
-      return "linear-gradient(135deg, #f12711, #f5af19)";
+      // High-energy fire burst
+      return `
+        radial-gradient(circle at 30% 70%, rgba(247,151,30,0.9) 0%, rgba(200,110,20,0.85) 60%, rgba(150,80,15,0.9) 100%),
+        radial-gradient(circle at 80% 30%, rgba(255,111,97,0.6) 0%, transparent 70%)
+      `.trim();
+
     case "business":
-       // Slate Blue to Steel Gray
-       return "linear-gradient(135deg, #2c3e50, #bdc3c7)";
+      // Sleek steel-blue depth
+      return `
+        radial-gradient(circle at center, rgba(44,62,80,0.9) 0%, rgba(28,40,60,0.9) 70%, rgba(18,28,40,0.95) 100%),
+        radial-gradient(circle at 70% 30%, rgba(76,161,175,0.5) 0%, transparent 80%)
+      `.trim();
+
     default:
-       // Medium Gray
-       return "linear-gradient(135deg, #888888, #AAAAAA)";
+      return `
+        radial-gradient(circle at center, rgba(80,80,80,0.9) 0%, rgba(50,50,50,0.9) 100%)
+      `.trim();
+  }
+};
+
+// New function for lighter gradients
+export const getLightTopicGradient = (topic: Topic): string => {
+  switch (topic) {
+    case "social":
+      // Much lighter warm community glow
+      return `
+        radial-gradient(circle at 30% 30%, rgba(255,95,109,0.1) 0%, rgba(215,35,75,0.1) 60%, rgba(158,23,57,0.15) 100%),
+        radial-gradient(circle at 70% 70%, rgba(255,195,113,0.05) 0%, transparent 70%)
+      `.trim();
+
+    case "science":
+      // Much lighter fresh discovery spectrum
+      return `
+        radial-gradient(circle at 40% 40%, rgba(33,147,176,0.15) 0%, rgba(15,75,102,0.1) 70%, rgba(10,50,80,0.15) 100%),
+        radial-gradient(circle at 65% 65%, rgba(109,213,237,0.05) 0%, transparent 80%)
+      `.trim();
+
+    case "tech":
+      // Much lighter electric pulse
+      return `
+        radial-gradient(circle at center, rgba(0,195,255,0.15) 0%, rgba(0,80,110,0.1) 60%, rgba(0,40,60,0.15) 100%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,28,0.05) 0%, transparent 80%)
+      `.trim();
+
+    case "arts":
+      // Much lighter creative pastel sunrise
+      return `
+        radial-gradient(circle at 25% 25%, rgba(255,154,139,0.1) 0%, rgba(200,100,110,0.1) 60%, rgba(140,50,70,0.15) 100%),
+        radial-gradient(circle at 75% 75%, rgba(255,106,136,0.05) 0%, transparent 70%)
+      `.trim();
+
+    case "sports":
+      // Much lighter high-energy fire burst
+      return `
+        radial-gradient(circle at 30% 70%, rgba(247,151,30,0.15) 0%, rgba(200,110,20,0.1) 60%, rgba(150,80,15,0.15) 100%),
+        radial-gradient(circle at 80% 30%, rgba(255,111,97,0.05) 0%, transparent 70%)
+      `.trim();
+
+    case "business":
+      // Much lighter sleek steel-blue depth
+      return `
+        radial-gradient(circle at center, rgba(44,62,80,0.15) 0%, rgba(28,40,60,0.15) 70%, rgba(18,28,40,0.2) 100%),
+        radial-gradient(circle at 70% 30%, rgba(76,161,175,0.05) 0%, transparent 80%)
+      `.trim();
+
+    default:
+      // Much lighter default gradient
+      return `
+        radial-gradient(circle at center, rgba(80,80,80,0.1) 0%, rgba(50,50,50,0.1) 100%)
+      `.trim();
   }
 };
 
@@ -54,4 +133,4 @@ export const getTopicIcon = (topic: Topic): string => {
       // Return a default icon name for unhandled topics
       return "QuestionMarkCircleIcon";
   }
-}; 
+};

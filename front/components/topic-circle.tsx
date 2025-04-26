@@ -8,7 +8,6 @@ import { useArticles } from "@/hooks/useArticles"
 
 interface TopicCardProps {
   topic: Topic
-  layoutId: string
   onClick: () => void
 }
 
@@ -32,7 +31,7 @@ const getTopicCount = (topic: Topic) => {
   return topicArticles.length
 }
 
-export default function TopicCircle({ topic, layoutId, onClick }: TopicCardProps) {
+export default function TopicCircle({ topic, onClick }: TopicCardProps) {
   // Calculate size in rem based on article count
   const baseSizeRem = 5; // 12 * 0.25rem
   const sizeIncrementRem = 2.25; // 2 * 0.25rem
@@ -49,7 +48,6 @@ export default function TopicCircle({ topic, layoutId, onClick }: TopicCardProps
 
   return (
     <motion.div
-      layoutId={layoutId}
       onClick={onClick}
       className={`group relative rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg flex items-center justify-center text-center cursor-pointer flex-shrink-0`}
       style={{
@@ -58,7 +56,7 @@ export default function TopicCircle({ topic, layoutId, onClick }: TopicCardProps
         width: `${finalSizeRem}rem`,
         height: `${finalSizeRem}rem`,
       }}
-      whileHover={{ scale: 1.2 }}
+      whileHover={{ scale: 1.4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {/* Gradient Background */}
