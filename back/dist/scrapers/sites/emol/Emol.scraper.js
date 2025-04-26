@@ -14,6 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const types_1 = require("../../types");
+const utils_1 = require("../../utils");
+const data_source_1 = require("../../../data-source");
 class EmolScraper {
     /**
      * @param numberOfPages how many pages of results to fetch (each pageSize items)
@@ -30,9 +32,6 @@ class EmolScraper {
         this.pageSize = pageSize;
         console.log(`Initialized EmolScraper: pages=${this.numberOfPages}, size=${this.pageSize}`);
     }
-    /**
-     * Fetches one "page" of the EMOL API (size items starting from `from`).
-     */
     fetchPage(from) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = `${EmolScraper.BASE_URL}${EmolScraper.ENDPOINT}/nacional/0`;
@@ -47,14 +46,10 @@ class EmolScraper {
             }
         });
     }
-    /**
-     * Helper to decode unicode escapes and HTML entities, then strip tags.
-     */
     cleanHtmlContent(rawContent) {
         if (!rawContent)
             return "";
         try {
-            // 1. Decode basic unicode escapes (like \u003C -> <)
             let text = rawContent.replace(/\\u([0-9a-fA-F]{4})/g, (match, grp) => String.fromCharCode(parseInt(grp, 16)));
             // 2. Decode common HTML entities
             text = text
@@ -85,11 +80,22 @@ class EmolScraper {
         return hits.map((hit) => {
             var _a;
             const src = hit._source;
+            const publishedDateString = src.fechaPublicacion;
+            let isoPublishedDate = undefined;
+            if (publishedDateString) {
+                try {
+                    // Attempt to parse the date string and convert to ISO format (UTC)
+                    isoPublishedDate = new Date(publishedDateString).toISOString();
+                }
+                catch (e) {
+                    console.warn(`Could not parse date string "${publishedDateString}" for Emol article ${src.permalink}: ${e.message}`);
+                }
+            }
             return {
                 url: src.permalink,
                 title: (_a = src.titulo) === null || _a === void 0 ? void 0 : _a.trim(),
                 author: types_1.AuthorSource.Emol, // Always set author to Emol
-                publishedDate: src.fechaPublicacion,
+                publishedDate: isoPublishedDate,
                 content: this.cleanHtmlContent(src.texto), // Clean the content
             };
         });
@@ -113,9 +119,16 @@ class EmolScraper {
                 console.log(`Page ${page} complete, total articles so far: ${allArticles.length}`);
             }
             // Deduplicate by URL
-            const unique = Array.from(new Map(allArticles.map(a => [a.url, a])).values());
-            console.log(`Scrape complete: ${unique.length} unique articles found.`);
-            return unique;
+            const uniqueArticles = Array.from(new Map(allArticles.map((a) => [a.url, a])).values());
+            console.log(`Scrape complete: ${uniqueArticles.length} unique articles found.`);
+            const analysedArticles = yield Promise.all(uniqueArticles.map(utils_1.generateAndAddAnalysisToArticle));
+            try {
+                yield (0, data_source_1.saveArticles)(analysedArticles);
+            }
+            catch (error) {
+                console.error(`Error saving analysed articles: ${error.message}`);
+            }
+            return analysedArticles;
         });
     }
 }

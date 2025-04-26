@@ -28,6 +28,7 @@ class CreateArticlesTable1745623307286 {
                         type: "varchar",
                         isPrimary: true,
                         isNullable: false,
+                        isUnique: true,
                     },
                     {
                         name: "title",

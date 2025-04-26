@@ -48,15 +48,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
 const types_1 = require("../../types");
-class TeleTreceArticleScraper {
+class LaTerceraArticleScraper {
     fetchArticleHtml(url) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
-                // Simple GET request, mimic browser User-Agent
+                console.log(`Fetching article: ${url}`);
                 const response = yield axios_1.default.get(url, {
                     headers: {
-                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-                        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                        // Mimic browser headers
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
                         "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
                     },
                 });
@@ -67,52 +69,80 @@ class TeleTreceArticleScraper {
                 return null;
             }
             catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                const responseStatus = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.status;
+                console.error(`Error fetching article ${url}: ${message}${responseStatus ? ` (Status: ${responseStatus})` : ''}`);
                 return null;
             }
         });
     }
     // Parses the main content from the article HTML
     parseContent(html, url) {
+        var _a;
         const $ = cheerio.load(html);
-        // Find the main article container
-        const mainArticle = $("main.articulo-detalle article");
-        const title = mainArticle.find('h1[itemprop="headline"]').text().trim();
-        const author = mainArticle.find(".autor a").text().trim();
-        const publishedDateString = mainArticle
-            .find('time[itemprop="datePublished"]')
-            .attr("datetime");
+        // Extract metadata
+        const title = (_a = $('meta[property="og:title"]').attr('content')) === null || _a === void 0 ? void 0 : _a.trim();
+        const publishedDateString = $('meta[property="article:published_time"]').attr('content');
         let isoPublishedDate = undefined;
         if (publishedDateString) {
             try {
-                // Attempt to parse the date string and convert to ISO format (UTC)
-                // Replace space with 'T' if needed for formats like 'YYYY-MM-DD HH:MM:SS'
-                const parsableDateString = publishedDateString.replace(' ', 'T');
-                isoPublishedDate = new Date(parsableDateString).toISOString();
+                isoPublishedDate = new Date(publishedDateString).toISOString();
             }
             catch (e) {
-                console.warn(`Could not parse date string "${publishedDateString}" for T13 article ${url}: ${e.message}`);
+                console.warn(`Could not parse date string "${publishedDateString}" for La Tercera article ${url}: ${e.message}`);
             }
         }
-        // Select the core content area
-        const contentElement = mainArticle.find(".cuerpo-content");
-        // Remove known non-content elements before extracting text
-        contentElement
-            .find(".ads13, .leetambien, .embed, #t13-envivo, #article-inread-desktop, .banner-google-news, #banner-13go, .articulo-categorias, .cuerpo-share")
-            .remove();
-        // Extract text from relevant tags within the content area
+        // --- Content Extraction ---
         let content = "";
-        contentElement.find("p, h2, h3, li").each((_idx, el) => {
-            const text = $(el).text().trim();
-            if (text) {
-                content += text + "\n\n"; // Add paragraphs/newlines
+        // Strategy 1: Try finding a main content container and extracting <p> tags
+        // Common La Tercera containers might be '.single-content', 'article .body', etc.
+        // Let's inspect the provided example's structure.
+        // The example has <div class="single-content content ..."
+        const mainContentContainer = $('div.single-content'); // Adjust selector if needed
+        if (mainContentContainer.length > 0) {
+            console.log(`Using main content container strategy for ${url}`);
+            mainContentContainer.find('p').each((_idx, el) => {
+                const text = $(el).text().trim();
+                if (text) {
+                    content += text + "\n\n";
+                }
+            });
+        }
+        else {
+            // Strategy 2: Fallback to parsing JSON-LD if main container fails
+            console.warn(`Main content container not found for ${url}. Trying JSON-LD.`);
+            try {
+                const jsonLdScript = $('script[type="application/ld+json"]').html();
+                if (jsonLdScript) {
+                    const jsonData = JSON.parse(jsonLdScript);
+                    if (jsonData && jsonData.articleBody) {
+                        content = jsonData.articleBody.replace(/<[^>]*>/g, ' ').replace(/\s\s+/g, ' ').trim(); // Basic HTML stripping
+                        console.log(`Extracted content from JSON-LD for ${url}`);
+                    }
+                    else {
+                        console.warn(`JSON-LD found but no articleBody for ${url}.`);
+                    }
+                }
+                else {
+                    console.warn(`JSON-LD script not found for ${url}.`);
+                }
             }
-        });
+            catch (jsonError) {
+                console.error(`Error parsing JSON-LD for ${url}: ${jsonError.message}`);
+            }
+        }
+        // If content is still empty after both strategies, log a warning
+        if (!content) {
+            console.warn(`Could not extract content for article: ${url}`);
+            // Strategy 3: As a last resort, grab all <p> tags in the body? Risky.
+            // $('body').find('p').each... - uncomment if desperate
+        }
         return {
             url,
-            title: title || undefined,
-            author: types_1.AuthorSource.T13,
+            title: title || undefined, // Use extracted title or undefined
+            author: types_1.AuthorSource.LaTercera, // Use the enum value
             publishedDate: isoPublishedDate,
-            content: content.trim(), // Trim trailing newlines
+            content: content.trim(),
         };
     }
     // Public method to scrape a single article
@@ -125,6 +155,9 @@ class TeleTreceArticleScraper {
             }
             try {
                 const articleDetail = this.parseContent(html, url);
+                if (!articleDetail.content) {
+                    console.warn(`Article content appears empty after parsing: ${url}`);
+                }
                 return articleDetail;
             }
             catch (error) {
@@ -134,4 +167,6 @@ class TeleTreceArticleScraper {
         });
     }
 }
-exports.default = TeleTreceArticleScraper;
+exports.default = LaTerceraArticleScraper;
+// Export ScrapedArticleDetail if needed by the main scraper directly
+// export { ScrapedArticleDetail }; 

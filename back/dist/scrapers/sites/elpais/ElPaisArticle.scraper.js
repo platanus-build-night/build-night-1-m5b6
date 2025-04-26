@@ -48,16 +48,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
 const types_1 = require("../../types");
-class TeleTreceArticleScraper {
+class ElPaisArticleScraper {
     fetchArticleHtml(url) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
-                // Simple GET request, mimic browser User-Agent
+                console.log(`Fetching El País article: ${url}`);
                 const response = yield axios_1.default.get(url, {
                     headers: {
-                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+                        // Standard browser headers
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
                         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
                         "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+                    },
+                    // El País might require handling redirects or specific statuses
+                    validateStatus: function (status) {
+                        return status >= 200 && status < 400; // Allow redirects (3xx)
                     },
                 });
                 if (typeof response.data === "string") {
@@ -67,6 +73,9 @@ class TeleTreceArticleScraper {
                 return null;
             }
             catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                const responseStatus = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.status;
+                console.error(`Error fetching El País article ${url}: ${message}${responseStatus ? ` (Status: ${responseStatus})` : ""}`);
                 return null;
             }
         });
@@ -74,45 +83,50 @@ class TeleTreceArticleScraper {
     // Parses the main content from the article HTML
     parseContent(html, url) {
         const $ = cheerio.load(html);
-        // Find the main article container
-        const mainArticle = $("main.articulo-detalle article");
-        const title = mainArticle.find('h1[itemprop="headline"]').text().trim();
-        const author = mainArticle.find(".autor a").text().trim();
-        const publishedDateString = mainArticle
-            .find('time[itemprop="datePublished"]')
-            .attr("datetime");
+        // Extract metadata and content based on El País structure
+        const title = $("article#main-content header h1.a_t").text().trim();
+        // Sometimes there are multiple authors listed, get the first one for simplicity
+        const authorName = $("div.a_md_a a.a_md_a_n").first().text().trim();
+        // Get date from the link's data-date attribute
+        const publishedDateString = $("div.a_md_f a").attr("data-date");
         let isoPublishedDate = undefined;
         if (publishedDateString) {
             try {
-                // Attempt to parse the date string and convert to ISO format (UTC)
-                // Replace space with 'T' if needed for formats like 'YYYY-MM-DD HH:MM:SS'
-                const parsableDateString = publishedDateString.replace(' ', 'T');
-                isoPublishedDate = new Date(parsableDateString).toISOString();
+                // The date string seems to be ISO 8601 compliant already
+                isoPublishedDate = new Date(publishedDateString).toISOString();
             }
             catch (e) {
-                console.warn(`Could not parse date string "${publishedDateString}" for T13 article ${url}: ${e.message}`);
+                console.warn(`Could not parse date string "${publishedDateString}" for El País article ${url}: ${e.message}`);
             }
         }
-        // Select the core content area
-        const contentElement = mainArticle.find(".cuerpo-content");
-        // Remove known non-content elements before extracting text
-        contentElement
-            .find(".ads13, .leetambien, .embed, #t13-envivo, #article-inread-desktop, .banner-google-news, #banner-13go, .articulo-categorias, .cuerpo-share")
-            .remove();
-        // Extract text from relevant tags within the content area
+        // --- Content Extraction ---
         let content = "";
-        contentElement.find("p, h2, h3, li").each((_idx, el) => {
-            const text = $(el).text().trim();
-            if (text) {
-                content += text + "\n\n"; // Add paragraphs/newlines
-            }
-        });
+        const mainContentContainer = $("div.a_c"); // Main content div
+        if (mainContentContainer.length > 0) {
+            console.log(`Extracting content using 'div.a_c p' strategy for ${url}`);
+            mainContentContainer.find("p").each((_idx, el) => {
+                const text = $(el).text().trim();
+                // Avoid adding empty paragraphs or paragraphs that might just contain ads/links
+                if (text && $(el).parents("aside").length === 0) {
+                    // Basic check to avoid paragraphs in asides
+                    content += text + "\n\n";
+                }
+            });
+        }
+        else {
+            console.warn(`Main content container 'div.a_c' not found for ${url}. Content might be missing.`);
+            // Add fallback strategies if needed (e.g., JSON-LD, though less likely for El País)
+        }
+        // If content is still empty, log a warning
+        if (!content.trim()) {
+            console.warn(`Could not extract meaningful content for article: ${url}`);
+        }
         return {
             url,
             title: title || undefined,
-            author: types_1.AuthorSource.T13,
+            author: types_1.AuthorSource.ElPais,
             publishedDate: isoPublishedDate,
-            content: content.trim(), // Trim trailing newlines
+            content: content.trim(),
         };
     }
     // Public method to scrape a single article
@@ -120,18 +134,23 @@ class TeleTreceArticleScraper {
         return __awaiter(this, void 0, void 0, function* () {
             const html = yield this.fetchArticleHtml(url);
             if (!html) {
-                console.error(`Failed to get HTML for article: ${url}`);
+                console.error(`Failed to get HTML for El País article: ${url}`);
                 return null;
             }
             try {
                 const articleDetail = this.parseContent(html, url);
+                if (!articleDetail.content) {
+                    console.warn(`El País article content appears empty after parsing: ${url}`);
+                    // Decide if empty content should still be returned or treated as an error (returning null here)
+                    // return null;
+                }
                 return articleDetail;
             }
             catch (error) {
-                console.error(`Error parsing article content for ${url}:`, error);
+                console.error(`Error parsing El País article content for ${url}:`, error);
                 return null;
             }
         });
     }
 }
-exports.default = TeleTreceArticleScraper;
+exports.default = ElPaisArticleScraper;

@@ -11,8 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.articleAnalysisWorkflow = void 0;
 const core_1 = require("@mastra/core");
-const types_1 = require("../types");
 const articleAnalyzerAgent_1 = require("../agents/articleAnalyzerAgent");
+const types_1 = require("../../scrapers/types");
 const analyzeArticleStep = new core_1.Step({
     id: "analyzeArticleStep",
     execute(context) {

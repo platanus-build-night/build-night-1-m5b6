@@ -12,19 +12,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppDataSource = void 0;
 exports.initializeDatabase = initializeDatabase;
 exports.getArticleRepository = getArticleRepository;
+exports.saveArticles = saveArticles;
 const typeorm_1 = require("typeorm");
-const models_1 = require("./models"); // Import the entity
+const models_1 = require("./models/models"); // Import the entity - removed .ts extension
+const DATABASE_PATH = process.env.ENV === "prod"
+    ? "/data/db.sqlite"
+    : "database.sqlite";
 // Simple configuration for SQLite stored in the root
 exports.AppDataSource = new typeorm_1.DataSource({
     type: "sqlite",
-    database: "database.sqlite", // Stores the DB file in the root directory
+    database: DATABASE_PATH, // Stores the DB file in the root directory
     synchronize: false, // Set to false when using migrations
     logging: false, // Set to true for debugging SQL queries
-    entities: [models_1.ScrapedArticleDetail], // Register the entity
+    entities: [models_1.Article], // Register the entity
     migrations: ["src/migrations/**/*.ts"], // Add migrations path glob
     subscribers: [], // Add subscribers path if needed
 });
-// Function to initialize the data source
 function initializeDatabase() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -43,10 +46,15 @@ function initializeDatabase() {
         }
     });
 }
-// Example of getting the repository
 function getArticleRepository() {
     if (!exports.AppDataSource.isInitialized) {
         throw new Error("DataSource is not initialized. Call initializeDatabase first.");
     }
-    return exports.AppDataSource.getRepository(models_1.ScrapedArticleDetail);
+    return exports.AppDataSource.getRepository(models_1.Article);
+}
+function saveArticles(articles) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const articleRepository = getArticleRepository();
+        yield articleRepository.save(articles);
+    });
 }

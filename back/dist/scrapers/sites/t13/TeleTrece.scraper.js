@@ -49,6 +49,7 @@ const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
 const TeleTreceArticle_scraper_1 = __importDefault(require("./TeleTreceArticle.scraper"));
 const utils_1 = require("../../utils");
+const data_source_1 = require("../../../data-source");
 // --- Constants ---
 const SITE_BASE_URL = "https://www.t13.cl";
 const AJAX_URL = `${SITE_BASE_URL}/views/ajax?_wrapper_format=drupal_ajax`;
@@ -58,7 +59,7 @@ const DEFAULT_HEADERS = {
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
 };
 class TeleTreceScraper {
-    constructor(numberOfPages = 1) {
+    constructor(numberOfPages = 10) {
         // Default to scraping 1 page
         if (numberOfPages < 1) {
             throw new Error("Number of pages to scrape must be at least 1.");
@@ -217,12 +218,13 @@ class TeleTreceScraper {
             try {
                 const finalArticles = yield this.filterAndTag(detailedArticles);
                 console.log(`Scrape process completed. Returning ${finalArticles.length} final articles.`);
+                yield (0, data_source_1.saveArticles)(finalArticles);
                 return finalArticles;
             }
             catch (error) {
-                console.error(`Error during final filtering/tagging: ${error.message}`);
-                console.log(`Scrape process completed with filtering error. Returning ${detailedArticles.length} unfiltered articles.`);
-                return detailedArticles; // Return successfully scraped articles even if filtering fails
+                console.error(`Error during final filtering/tagging or saving: ${error.message}`);
+                console.log(`Scrape process completed with error. Returning ${detailedArticles.length} unfiltered/unsaved detailed articles.`);
+                return detailedArticles; // Return successfully scraped articles even if saving/filtering fails
             }
         });
     }

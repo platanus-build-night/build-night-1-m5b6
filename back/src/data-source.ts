@@ -1,10 +1,13 @@
 import { DataSource } from "typeorm";
 import { Article } from "./models/models"; // Import the entity - removed .ts extension
-
+const DATABASE_PATH =
+  process.env.ENV === "prod"
+    ? "/data/db.sqlite"
+    : "database.sqlite";
 // Simple configuration for SQLite stored in the root
 export const AppDataSource = new DataSource({
   type: "sqlite",
-  database: "database.sqlite", // Stores the DB file in the root directory
+  database: DATABASE_PATH, // Stores the DB file in the root directory
   synchronize: false, // Set to false when using migrations
   logging: false, // Set to true for debugging SQL queries
   entities: [Article], // Register the entity

@@ -12,13 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateAndAddAnalysisToArticle = void 0;
 const articleAnalyzerAgent_1 = require("../mastra/agents/articleAnalyzerAgent");
 const generateAndAddAnalysisToArticle = (article) => __awaiter(void 0, void 0, void 0, function* () {
-    const agentResult = yield articleAnalyzerAgent_1.articleAnalyzerAgent.generate(`Perform a full analysis (sentiment, topic, digest) of the following article text and report using the tool:
+    const agentResult = yield articleAnalyzerAgent_1.articleAnalyzerAgent.generate(`Realiza un análisis completo (sentimiento, tema, puntuación de positividad, digest) del siguiente texto del artículo y repórtalo usando la herramienta:
 \n---\n${article.content}\n---"`, {
         toolChoice: "required",
         maxRetries: 0,
         maxSteps: 1,
+        temperature: 0.4,
     });
     const toolResult = agentResult.toolResults[0].result;
-    return Object.assign(Object.assign({}, article), { sentiment: toolResult.sentiment, topic: toolResult.topic, digest: toolResult.digest });
+    return Object.assign(Object.assign({}, article), { sentiment: toolResult.sentiment, topic: toolResult.topic, positivityScore: toolResult.positivityScore, digest: toolResult.digest, score: toolResult.positivityScore });
 });
 exports.generateAndAddAnalysisToArticle = generateAndAddAnalysisToArticle;
