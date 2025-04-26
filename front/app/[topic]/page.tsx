@@ -20,6 +20,24 @@ const allIcons = { ...HeroIconsSolid };
 // Constants
 const ITEMS_PER_PAGE = 4;
 
+// Define slide variants
+const slideVariants = {
+    initial: (direction: number) => ({
+        x: direction > 0 ? '30%' : '-30%',
+        opacity: 0,
+    }),
+    animate: {
+        x: '0%',
+        opacity: 1,
+        transition: { duration: 0.5, ease: 'easeInOut' },
+    },
+    exit: (direction: number) => ({
+        x: direction < 0 ? '30%' : '-30%',
+        opacity: 0,
+        transition: { duration: 0.3, ease: 'easeInOut' },
+    }),
+};
+
 export default function TopicPage() {
     const params = useParams();
     const router = useRouter();
@@ -30,9 +48,10 @@ export default function TopicPage() {
     const [topicDisplayName, setTopicDisplayName] = useState<string>("");
     const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
     const [TopicIconComponent, setTopicIconComponent] = useState<React.ElementType | null>(null);
-    const [currentPage, setCurrentPage] = useState<number>(0); // Start at page 0
+    const [currentPage, setCurrentPage] = useState<number>(0);
     const [isReady, setIsReady] = useState(false);
-    const [isNavigatingBack, setIsNavigatingBack] = useState(false); // State for back navigation
+    const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+    const [slideDirection, setSlideDirection] = useState<number>(1); // 1 for next, -1 for previous
 
     // Effect to process data once articles load and topic is known
     useEffect(() => {
@@ -97,10 +116,12 @@ export default function TopicPage() {
 
     // Pagination handlers
     const goToNextPage = () => {
+        setSlideDirection(1); // Set direction before page change
         setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
     };
 
     const goToPreviousPage = () => {
+        setSlideDirection(-1); // Set direction before page change
         setCurrentPage((prev) => Math.max(prev - 1, 0));
     };
 
@@ -203,19 +224,32 @@ export default function TopicPage() {
                             {/* <DayNightVisor /> */}
                         </div>
 
-                        {/* Articles Grid now inside a container that doesn't grow */}
-                        <div>
-                            <div className="grid grid-cols-2 gap-6">
-                                {currentArticles.length > 0 ? (
-                                    currentArticles.map((article, index) => (
-                                        <ArticleCard key={article.id} article={article} index={index} />
-                                    ))
-                                ) : (
-                                    <div className="col-span-full text-center text-black py-10">
-                                        <p>No hay noticias para mostrar en este momento.</p>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Articles Container Wrapper - Added relative positioning */}
+                        <div className="relative flex flex-grow items-center justify-center overflow-hidden"> {/* Added relative */}
+                            {/* AnimatePresence - Removed mode="wait" */}
+                            <AnimatePresence initial={false} custom={slideDirection}>
+                                {/* Grid container - Added absolute positioning */}
+                                <motion.div
+                                    key={currentPage}
+                                    className="absolute flex flex-wrap justify-center gap-6" // Added absolute
+                                    custom={slideDirection}
+                                    variants={slideVariants}
+                                    initial="initial"
+                                    animate="animate"
+                                    exit="exit"
+                                >
+                                    {currentArticles.length > 0 ? (
+                                        currentArticles.map((article, index) => (
+                                            // ArticleCard itself keeps its own entrance animation
+                                            <ArticleCard key={article.id} article={article} index={index} />
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full text-center text-black py-10">
+                                            <p>No hay noticias para mostrar en este momento.</p>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
                     </div>
                 </motion.main>

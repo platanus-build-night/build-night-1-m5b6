@@ -1,89 +1,100 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Article, AuthorSource } from "@/lib/types";
+import { getTopicGradient } from "@/lib/topic-metadata";
 
-const cleanTitle = (title: string): string => {
-  if (!title) {
-    return ""; // Return empty string if input is null, undefined, or empty
-  }
-
-  let cleanedTitle = title;
-
-  // Remove HTML quote entity
-  cleanedTitle = cleanedTitle.replaceAll('&quot;', '');
-
-  // Remove " - La Tercera"
-  cleanedTitle = cleanedTitle.replace(/\s*-\s*La Tercera\s*$/i, ''); // Case-insensitive, handles surrounding whitespace
-
-  // Remove commas
-  cleanedTitle = cleanedTitle.replaceAll(',', '');
-
-  // Remove hyphens (use replaceAll to catch multiple)
-  cleanedTitle = cleanedTitle.replaceAll('-', '');
-
-  // Optional: Trim whitespace from start and end
-  cleanedTitle = cleanedTitle.trim();
-
-  return cleanedTitle;
-}
-
-// Map AuthorSource enum to icon paths (assuming icons are in /public/icons/)
-const sourceIconMap: Record<AuthorSource, string> = {
-  "Emol": "/emol.jpg",
-  "T13": "/t13.webp",
-  "LaTercera": "/lt.jpg",
-  "ElPais": "/elpais.png",
+// Map sources to SF Symbols where possible, else fallback image
+const sourceIcon: Record<AuthorSource, { symbol?: string; src?: string }> = {
+  Emol: { src: "/emol.jpg" },
+  T13: { symbol: "tv.fill" }, // SF Symbol example
+  LaTercera: { src: "/lt.jpg" },
+  ElPais: { symbol: "newspaper.fill" },
 };
+
+const cleanTitle = (t: string) =>
+  t
+    ?.replaceAll("&quot;", "")
+    .replace(/\s*-\s*La Tercera\s*$/i, "")
+    .replaceAll(/[,-]/g, "")
+    .trim() || "";
 
 interface ArticleCardProps {
   article: Article;
-  index: number; // For animation delay
+  index: number;
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ article, index }) => {
-  // Get icon path safely by checking if the string key exists in the map
-  const iconSrc = sourceIconMap[article.author as AuthorSource];
-
+export default function ArticleCard({ article, index }: ArticleCardProps) {
+  const { symbol, src } = sourceIcon[article.author as AuthorSource] || {};
   return (
-    <motion.div
-      key={article.id}
-      className="relative aspect-square overflow-hidden bg-white/10 backdrop-blur-md rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-white/10 flex flex-col justify-between"
+    <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
+      transition={{ delay: index * 0.05, duration: 0.5 }}
+      className="
+        w-[calc(50%-0.75rem)] /* Width for 2 columns with gap-6 */
+        relative flex flex-col justify-between
+        bg-white/5 backdrop-blur-xl
+        rounded-2xl
+        shadow-lg hover:shadow-2xl
+        transition-transform duration-200 ease-out
+        hover:scale-105 active:scale-100
+        overflow-hidden
+      "
     >
-      <a href={article.url} target="_blank" rel="noopener noreferrer" className="flex flex-col h-full">
-        <div>
-          <h2
-            className={`
-              text-4xl font-semibold font-serif text-black mb-4 line-clamp-5
-              text-justify
-            `}
-          >
-            {cleanTitle(article.title)}
-          </h2>
-          <p className="text-sm text-gray-700 mb-3 line-clamp-6">{article.digest}</p>
-        </div>
-        <div className="text-xs text-gray-700 flex justify-between items-center mt-auto">
-          <span>&nbsp;</span>
-          <span>{new Date(article.publishedDate).toLocaleDateString()}</span>
+      {/* tiny accent bar */}
+      <div
+        className="absolute top-0 left-0 w-full h-1"
+        style={{ background: getTopicGradient(article.topic) }}
+      />
+
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex flex-col h-full p-6"
+      >
+        {/* Headline */}
+        <h2
+          className="
+            font-serif text-2xl md:text-3xl
+            leading-tight text-gray-900
+            mb-4
+          "
+          style={{ fontFamily: "Instrument Serif, serif" }}
+        >
+          {cleanTitle(article.title)}
+        </h2>
+
+        {/* Digest */}
+        <p className="flex-1 font-sans text-base leading-relaxed text-gray-700 mb-6">
+          {article.digest}
+        </p>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          {/* Source Icon */}
+          {symbol ? (
+            <span className="text-lg text-gray-500">
+              <i className={`sf-symbol sf-symbol-${symbol}`} />
+            </span>
+          ) : (
+            <Image
+              src={src!}
+              alt={article.author}
+              width={24}
+              height={24}
+              className="rounded-sm object-cover"
+            />
+          )}
+
+          {/* Date */}
+          <time dateTime={article.publishedDate}>
+            {new Date(article.publishedDate).toLocaleDateString()}
+          </time>
         </div>
       </a>
-
-      {iconSrc && (
-        <Image
-          src={iconSrc}
-          alt={`${article.author} logo`}
-          width={20}
-          height={20}
-          className="absolute bottom-2 left-2 h-5 w-5 rounded-sm object-contain"
-        />
-      )}
-    </motion.div>
+    </motion.article>
   );
-};
-
-export default ArticleCard; 
+}
