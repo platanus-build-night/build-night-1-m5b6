@@ -4,6 +4,8 @@ import TeleTreceScraper from "../scrapers/sites/t13/TeleTrece.scraper";
 import EmolScraper from "../scrapers/sites/emol/Emol.scraper";
 import LaTerceraScraper from "../scrapers/sites/latercera/LaTercera.scraper";
 import ElPaisScraper from "../scrapers/sites/elpais/ElPais.scraper";
+import { ScrapedArticleDetail } from "../scrapers/types";
+
 @JsonController("/scrape")
 export class ScraperController {
   @Get("/t13")
@@ -76,5 +78,64 @@ export class ScraperController {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  @Get("/all")
+  async scrapeAll(@Res() response: Response): Promise<Response> {
+    console.log("Received request to scrape all sources...");
+    const scrapers = [
+      { name: "TeleTrece", instance: new TeleTreceScraper() },
+      { name: "Emol", instance: new EmolScraper() },
+      { name: "LaTercera", instance: new LaTerceraScraper() },
+      { name: "ElPais", instance: new ElPaisScraper() },
+    ];
+
+    const promises = scrapers.map((s) =>
+      s.instance.scrape().catch((err) => {
+        console.error(`Error during ${s.name} scrape execution:`, err);
+        return { error: true, source: s.name, message: err instanceof Error ? err.message : String(err) };
+      })
+    );
+
+    const results = await Promise.allSettled(promises);
+
+    const allArticles: ScrapedArticleDetail[] = [];
+    const errors: { source: string; message: string }[] = [];
+
+    results.forEach((result, index) => {
+      const sourceName = scrapers[index].name;
+      if (result.status === "fulfilled") {
+        const value = result.value;
+        if (value && typeof value === 'object' && 'error' in value && value.error === true) {
+          console.warn(`Scraper ${sourceName} failed internally: ${value.message}`);
+          errors.push({ source: sourceName, message: value.message });
+        } else if (Array.isArray(value)) {
+          console.log(`Scraper ${sourceName} finished successfully, found ${value.length} articles.`);
+          allArticles.push(...value);
+        } else {
+          console.warn(`Scraper ${sourceName} finished with unexpected value:`, value);
+          errors.push({ source: sourceName, message: 'Unexpected result format from scraper.' });
+        }
+      } else {
+        console.error(`Scraper ${sourceName} promise rejected:`, result.reason);
+        errors.push({
+          source: sourceName,
+          message:
+            result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason),
+        });
+      }
+    });
+
+    console.log(
+      `Scrape all finished. Total articles: ${allArticles.length}, Errors: ${errors.length}`
+    );
+
+    return response.json({
+      total: allArticles.length,
+      articles: allArticles,
+      errors: errors,
+    });
   }
 }

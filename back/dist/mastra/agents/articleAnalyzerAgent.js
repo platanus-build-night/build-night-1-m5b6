@@ -47,6 +47,6 @@ Analyze the provided text to determine its overall sentiment, classify its main 
 3.  **Digest Generation**: Write a very short (1-2 sentence, 10-150 characters) digest of the article. The digest should have a positive or neutral tone, even if the article is negative, and be somewhat abstract or esoteric in style.
 
 **You MUST use the report-analysis-and-digest tool to provide your final answer.** Include the determined sentiment, topic, and the generated digest in the tool call.`,
-    model: (0, openai_1.openai)("gpt-4o-mini"), // Use a capable model
+    model: (0, openai_1.openai)("gpt-4o-nano"), // Use a capable model
     tools: { analysisReportTool },
 });

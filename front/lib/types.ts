@@ -40,4 +40,5 @@ export enum AuthorSource {
   T13 = "T13",
   LaTercera = "LaTercera",
   ElPais = "ElPais",
+  ElMostrador = "ElMostrador",
 }

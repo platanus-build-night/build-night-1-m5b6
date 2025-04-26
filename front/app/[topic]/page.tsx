@@ -25,16 +25,19 @@ const slideVariants = {
     initial: (direction: number) => ({
         x: direction > 0 ? '30%' : '-30%',
         opacity: 0,
+        scale: 0.85,
     }),
     animate: {
         x: '0%',
+        scale: 1,
         opacity: 1,
-        transition: { duration: 0.5, ease: 'easeInOut' },
+        transition: { duration: 0.6, ease: 'easeInOut' },
     },
     exit: (direction: number) => ({
         x: direction < 0 ? '30%' : '-30%',
+        scale: 0.85,
         opacity: 0,
-        transition: { duration: 0.3, ease: 'easeInOut' },
+        transition: { duration: 0.4, ease: 'easeInOut' },
     }),
 };
 
@@ -190,7 +193,7 @@ export default function TopicPage() {
                 transition={{ duration: 0.3 }} // Use same duration for fade in/out
             >
                 <motion.main
-                    className="flex-grow flex flex-col items-center p-6 pb-16 relative overflow-hidden bg-gray-50 dark:bg-gray-900"
+                    className="flex-grow flex flex-col items-center p-6 pb-16 relative overflow-visible bg-gray-50 dark:bg-gray-900"
                 >
                     {/* Content Container */}
                     <div className="relative z-10 w-full max-w-4xl mx-auto flex-grow flex flex-col">
@@ -224,11 +227,11 @@ export default function TopicPage() {
                             {/* <DayNightVisor /> */}
                         </div>
 
-                        {/* Articles Container Wrapper - Added relative positioning */}
-                        <div className="relative flex flex-grow items-center justify-center overflow-hidden"> {/* Added relative */}
-                            {/* AnimatePresence - Removed mode="wait" */}
+                        {/* Articles Container Wrapper - Removed overflow-hidden */}
+                        <div className="relative flex flex-grow items-center justify-center"> {/* Removed overflow-hidden */}
+                            {/* AnimatePresence for sliding grid */}
                             <AnimatePresence initial={false} custom={slideDirection}>
-                                {/* Grid container - Added absolute positioning */}
+                                {/* Grid container */}
                                 <motion.div
                                     key={currentPage}
                                     className="absolute flex flex-wrap justify-center gap-6" // Added absolute

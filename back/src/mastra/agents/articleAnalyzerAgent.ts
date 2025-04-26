@@ -10,12 +10,20 @@ const sentiments = Object.values(Sentiment);
 export const ArticleAnalysisOutputSchema = z.object({
   sentiment: z.nativeEnum(Sentiment),
   topic: z.nativeEnum(Topic),
+  positivityScore: z
+    .number()
+    .min(1)
+    .max(100)
+    .int()
+    .describe(
+      "Una puntuación de 1 a 100 que indica cuán positiva es la noticia. 1 es extremadamente negativa (muerte, tortura, desastre nuclear), 100 es extremadamente positiva (cura del cáncer, paz mundial)."
+    ),
   digest: z
     .string()
     .min(10)
     .max(150)
     .describe(
-      "Un resumen corto, positivo y esotérico de la noticia (10-150 caracteres)"
+      "Un resumen corto, positivo y un tanto esotérico, abstracto o filosófico de la noticia (10-150 caracteres)"
     ),
 });
 
@@ -26,6 +34,7 @@ export interface ArticleAnalysisInput {
 export interface ArticleAnalysisOutput {
   sentiment: Sentiment;
   topic: Topic;
+  positivityScore: number;
   digest: string;
 }
 
@@ -54,12 +63,18 @@ Sigue estos pasos rigurosamente:
 2.  **Clasificación Temática**: Identifica el tema central del artículo y clasifícalo obligatoriamente como uno de estos: ${topics.join(
     ", "
   )}.
-3.  **Creación de Digest Esotérico**: Redacta un 'digest' (resumen breve y abstracto) del artículo. Este digest debe cumplir OBLIGATORIAMENTE las siguientes condiciones:
+3. **Cálculo de Puntuación de Positividad**: Basándote en el contenido completo, asigna una puntuación de positividad entera entre 1 y 100. 
+    *   1 representa eventos extremadamente negativos (ej: asesinato brutal, desastre nuclear masivo).
+    *   50 representa noticias neutrales o mixtas (ej: informe económico estándar, debate político).
+    *   100 representa eventos extremadamente positivos (ej: cura definitiva del cáncer, consecución de la paz mundial).
+    Evalúa la magnitud e impacto del evento descrito en la noticia para asignar la puntuación. Sé objetivo.
+
+4.  **Creación de Digest Esotérico**: Redacta un 'digest' (resumen breve y abstracto) del artículo. Este digest debe cumplir OBLIGATORIAMENTE las siguientes condiciones:
     *   Extensión: Entre 10 y 150 caracteres.
     *   Tono: Positivo o neutro, SIN EXCEPCIÓN, incluso si la noticia original es negativa.
     *   Estilo: Ligeramente abstracto, evocador o esotérico. Evita ser un simple resumen literal.
 
-**IMPRESCINDIBLE**: Debes utilizar la herramienta \`report-analysis-and-digest\` para entregar tu análisis final. Asegúrate de incluir el sentimiento, el tema y el digest generado (cumpliendo todas las condiciones) como parámetros en la llamada a la herramienta. No respondas de ninguna otra forma.`,
-  model: openai("gpt-4.1-mini"), // Use a capable model
+**IMPRESCINDIBLE**: Debes utilizar la herramienta \`report-analysis-and-digest\` para entregar tu análisis final. Asegúrate de incluir el sentimiento, el tema, la puntuación de positividad y el digest generado (cumpliendo todas las condiciones) como parámetros en la llamada a la herramienta. No respondas de ninguna otra forma.`,
+  model: openai("gpt-4.1-nano"), // Use a capable model
   tools: { analysisReportTool },
 });
