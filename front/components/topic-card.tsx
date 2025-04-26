@@ -1,11 +1,13 @@
 "use client"
-import type { Category } from "@/lib/types"
+import { type Topic } from "@/lib/types"
+import { getTopicGradient, getTopicIcon, topicNames } from "@/lib/topic-metadata"
 import { motion } from "framer-motion"
 import * as HeroIconsOutline from "@heroicons/react/24/outline"
 import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline"
+import { useArticles } from "@/hooks/useArticles"
 
-interface CategoryCardProps {
-  category: Category
+interface TopicCardProps {
+  topic: Topic
 }
 
 const IconComponent = ({ name, className }: { name: string; className?: string }) => {
@@ -22,15 +24,26 @@ const IconComponent = ({ name, className }: { name: string; className?: string }
   return <Icon className={finalClassName} />
 }
 
-export default function CategoryCard({ category }: CategoryCardProps) {
+const getTopicCount = (topic: Topic) => {
+  const { articles } = useArticles()
+  const topicArticles = articles.filter((article) => article.topic === topic)
+  return topicArticles.length
+}
+
+export default function TopicCard({ topic }: TopicCardProps) {
   // Calculate size in rem based on article count
   const baseSizeRem = 3; // 12 * 0.25rem
   const sizeIncrementRem = 0.5; // 2 * 0.25rem
-  const articleCount = category.articles?.length || 0;
+  const articleCount = getTopicCount(topic)
   const dynamicSizeRem = baseSizeRem + articleCount * sizeIncrementRem;
   // Cap the size to avoid excessively large cards
   const maxSizeRem = 6; // 24 * 0.25rem
   const finalSizeRem = Math.min(dynamicSizeRem, maxSizeRem);
+
+  // Get metadata using the new functions
+  const gradient = getTopicGradient(topic);
+  const iconName = getTopicIcon(topic);
+  const name = topicNames[topic] || topic; // Fallback to topic key if name not found
 
   return (
     <motion.div
@@ -49,7 +62,7 @@ export default function CategoryCard({ category }: CategoryCardProps) {
       <div
         className="absolute inset-0 opacity-90 group-hover:opacity-100 transition-opacity"
         style={{
-          background: category.gradient,
+          background: gradient,
           backgroundSize: "200% 200%",
           animation: "gradientMove 8s ease infinite",
         }}
@@ -67,13 +80,9 @@ export default function CategoryCard({ category }: CategoryCardProps) {
 
       {/* Icon and Text Content */}
       <div className="relative z-10 flex flex-col items-center justify-center p-1">
-        {category.icon ? (
-          <IconComponent name={category.icon} className="h-5 w-5 text-gray-700 mb-0.5" />
-        ) : (
-          <div className="h-5 w-5 mb-0.5" />
-        )}
+        <IconComponent name={iconName} className="h-5 w-5 text-gray-700 mb-0.5" />
         <p className="text-xl text-center font-medium text-white dark:text-gray-200 font-serif truncate group-hover:whitespace-normal group-hover:overflow-visible">
-          {category.name}
+          {name}
         </p>
         <span className="text-[8px] text-white dark:text-gray-400 mt-0.5">
           ({articleCount} {articleCount === 1 ? 'noticia' : 'noticias'})

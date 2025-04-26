@@ -3,14 +3,22 @@
 import { useState, useEffect } from "react"
 import { MoonIcon, EyeIcon } from "@heroicons/react/24/outline"
 import FeaturedHeadline from "@/components/featured-headline"
-import CategoryCard from "@/components/category-card"
-// import GraphMode from "@/components/graph-mode" // Not used in this layout
-import { mockCategories, mockFeaturedHeadline } from "@/lib/mock-data"
+// Rename import for clarity
+// import CategoryCard from "@/components/topic-card"
+import TopicCard from "@/components/topic-card" // Assuming this is the correct component
 import { motion } from "framer-motion"
 import DayNightVisor from "@/components/day-night-visor"
+import { useArticles } from "../hooks/useArticles";
+import { Topic } from "@/lib/types"
+// Remove duplicate TopicCard import
+// import TopicCard from "@/components/topic-card"
 
 
 export default function Home() {
+  // Fetch articles and topics data
+  // Use correct return values from hook
+  const { articles, topics, loading, error } = useArticles();
+
   // Remove mode and expandedCategory state
   const [isDaytime, setIsDaytime] = useState(true)
   const [timeUntilChange, setTimeUntilChange] = useState("")
@@ -88,11 +96,32 @@ export default function Home() {
     return () => clearInterval(interval) // Cleanup on unmount
   }, []) // Empty dependency array ensures this effect runs once for the interval
 
-  // Calculate positioning for orbiting categories
-  const numCategories = mockCategories.length
-  const orbitRadius = 300 // Increased radius for a larger orbit
-  const angleStep = (2 * Math.PI) / numCategories
+  // Calculate positioning for orbiting TOPICS
+  const numTopics = topics.length // Use topics length
+  const orbitRadius = 300
+  const angleStep = numTopics > 0 ? (2 * Math.PI) / numTopics : 0 // Use numTopics
 
+  // Handle Loading State
+  if (loading) {
+    return (
+      <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-white dark:bg-black text-black dark:text-white overflow-hidden">
+        {/* Translate loading text */}
+        <p>Cargando noticias...</p>
+      </main>
+    );
+  }
+
+  // Handle Error State
+  if (error) {
+    return (
+      <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-white dark:bg-black text-black dark:text-white overflow-hidden">
+        {/* Translate error text */}
+        <p className="text-red-500">Error al cargar noticias: {error.message}</p>
+      </main>
+    );
+  }
+
+  // Main component render when data is loaded
   return (
     // Main container: Full height, flex column, centered, relative for positioning children
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-white dark:bg-black text-black dark:text-white overflow-hidden">
@@ -109,7 +138,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Orbiting Categories Container - Explicitly Centered */}
+      {/* Orbiting TOPICS Container - Explicitly Centered */}
       <motion.div
         className="absolute planet"
         style={{
@@ -117,30 +146,31 @@ export default function Home() {
           left: '50%',
           transform: 'translate(-50%, -50%)'
         }}
-        animate={{ rotate: 360 }} // Continuous rotation
-        transition={{ ease: "linear", duration: 60, repeat: Infinity }} // Adjust duration for speed
+        animate={{ rotate: 360 }}
+        transition={{ ease: "linear", duration: 60, repeat: Infinity }}
       >
-        {mockCategories.map((category, index) => {
-          const angle = angleStep * index - Math.PI / 2 // Start from top (-90 deg)
+        {/* Map over fetched TOPICS */} 
+        {topics.map((topic, index) => { // Use topics array
+          const angle = angleStep * index - Math.PI / 2
           const x = orbitRadius * Math.cos(angle)
           const y = orbitRadius * Math.sin(angle)
 
           return (
             <motion.div
-              key={category.id}
+              key={topic} // Use topic value as key
               className="absolute planet"
               style={{
                 left: '50%',
                 top: '50%',
-                x: x - 40, // Center the card (half of w-20)
-                y: y - 40, // Center the card (half of h-20),
-                pointerEvents: 'auto' // Make cards interactive
+                x: x - 40,
+                y: y - 40,
+                pointerEvents: 'auto'
               }}
-              // Counter-rotate the card itself to keep it upright
               animate={{ rotate: -360 }}
               transition={{ ease: "linear", duration: 60, repeat: Infinity }}
             >
-              <CategoryCard category={category} />
+              {/* Pass topic to TopicCard */}
+              <TopicCard topic={topic} />
             </motion.div>
           )
         })}

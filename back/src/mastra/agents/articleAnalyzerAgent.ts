@@ -1,14 +1,12 @@
 import { Agent } from "@mastra/core";
 import { openai } from "@ai-sdk/openai";
-import { Sentiment, Topic } from "../types";
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { ScrapedArticleDetail } from "../../scrapers/types";
+import { ScrapedArticleDetail, Sentiment, Topic } from "../../scrapers/types";
 
 const topics = Object.values(Topic);
 const sentiments = Object.values(Sentiment);
 
-// Add Zod schema for the final output including digest
 export const ArticleAnalysisOutputSchema = z.object({
   sentiment: z.nativeEnum(Sentiment),
   topic: z.nativeEnum(Topic),

@@ -1,21 +1,35 @@
+export const enum Topic {
+  Social = "social",
+  Science = "science",
+  Technology = "tech",
+  Arts = "arts",
+  Sports = "sports",
+  Business = "business",
+}
+export enum Sentiment {
+  Positive = "positive",
+  Negative = "negative",
+  Neutral = "neutral",
+}
+
 export interface Article {
-  id: string
-  title: string
-  summary: string
-  content: string
-  date: string
-  imageUrl?: string
+  id: string; // Derived from URL
+  url: string;
+  title: string;
+  author: string; // Consider using AuthorSource enum if available
+  publishedDate: string;
+  content: string;
+  sentiment: Sentiment;
+  topic: Topic;
+  digest: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Category {
-  id: string
-  name: string
-  gradient: string
-  icon?: string
-  articles: Article[]
+export interface ArticlesApiResponse {
+  total: number;
+  articles: Article[];
 }
 
-export interface FeaturedHeadline {
-  headline: string
-  digest: string
-}
+// --- Metadata moved to lib/topic-metadata.ts ---
+// Remove topicNames, getTopicGradient, getTopicIcon

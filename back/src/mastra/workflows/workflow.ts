@@ -1,12 +1,14 @@
 import { Step, Workflow } from "@mastra/core";
 import { z } from "zod";
-import { ArticleAnalysisInputSchema, Sentiment, Topic } from "../types";
 import {
   ArticleAnalysisOutput,
   ArticleAnalysisOutputSchema,
   articleAnalyzerAgent,
 } from "../agents/articleAnalyzerAgent";
-import { ScrapedArticleDetail } from "../../scrapers/types";
+import {
+  ScrapedArticleDetail,
+  ArticleAnalysisInputSchema,
+} from "../../scrapers/types";
 
 const analyzeArticleStep = new Step({
   id: "analyzeArticleStep",

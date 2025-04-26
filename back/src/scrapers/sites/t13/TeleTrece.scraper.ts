@@ -3,13 +3,6 @@ import * as cheerio from "cheerio";
 import TeleTreceArticleScraper, {
   ScrapedArticleDetail,
 } from "./TeleTreceArticle.scraper";
-import { AuthorSource } from "../../types"; // Import Enums from main types file
-import { Sentiment, Topic } from "../../../mastra/types"; // Correct path for enums
-import {
-  articleAnalyzerAgent,
-  ArticleAnalysisOutputSchema, // Import schema for validation
-  ArticleAnalysisOutput, // Import output type
-} from "../../../mastra/agents/articleAnalyzerAgent"; // Import the agent directly
 import { generateAndAddAnalysisToArticle } from "../../utils";
 import { saveArticles } from "../../../data-source";
 import { Article } from "../../../models/articles.model"; // Correct import path for Article
@@ -269,7 +262,9 @@ class TeleTreceScraper {
       return finalArticles;
     } catch (error) {
       console.error(
-        `Error during final filtering/tagging or saving: ${(error as Error).message}`
+        `Error during final filtering/tagging or saving: ${
+          (error as Error).message
+        }`
       );
       console.log(
         `Scrape process completed with error. Returning ${detailedArticles.length} unfiltered/unsaved detailed articles.`
