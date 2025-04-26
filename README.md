@@ -1,8 +1,7 @@
-# Build Night #1
+houp.cl
+/həʊp/
 
-## Participant Information
-- Name: Matías Antonio Berríos Ortigas
-- GitHub: https://github.com/m5b6
-- LinkedIn: https://www.linkedin.com/in/matiasberrios/
+<img width="956" alt="image" src="https://github.com/user-attachments/assets/f4b27fac-33bd-4dc9-8d01-ba852e14ef61" />
 
-Welcome to Build Night #1! This repository has been created for you to work on your project.
+
+noticias positivas en una interfaz limpia
