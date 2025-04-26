@@ -29,18 +29,40 @@ const getScoreColor = (score: number | undefined): string => {
   return `hsl(${hue}, 90%, 40%)`;
 };
 
+// --- Copy Helper functions from ArticleCard --- 
+function escapeRegex(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+}
+
+const highlightMatches = (text: string | undefined | null, query: string, highlightBackground: string): React.ReactNode => {
+  if (!query || !text) {
+    return text || ""; 
+  }
+  const escapedQuery = escapeRegex(query);
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, index) =>
+    regex.test(part)
+      ? <span key={index} style={{ background: highlightBackground }} className="text-black rounded-sm px-0.5">{part}</span>
+      : part
+  );
+};
+// --- End Copied Helpers --- 
+
 interface ExpandedArticleViewProps {
   article: Article;
   layoutId: string;
   onClose: () => void;
+  searchQuery: string;
 }
 
-const ExpandedArticleView: React.FC<ExpandedArticleViewProps> = ({ article, layoutId, onClose }) => {
+const ExpandedArticleView: React.FC<ExpandedArticleViewProps> = ({ article, layoutId, onClose, searchQuery }) => {
   const { symbol, src } = sourceIcon[article.author as AuthorSource] || {};
   const gradientValue = getTopicGradient(article.topic);
   const scoreValue = article.score;
   const formattedScore = scoreValue !== undefined ? `${Math.round(scoreValue)}%` : null;
   const scoreColor = getScoreColor(scoreValue);
+  const lightGradientValue = getLightTopicGradient(article.topic);
 
   // Effect to handle Escape key press
   useEffect(() => {
@@ -61,7 +83,7 @@ const ExpandedArticleView: React.FC<ExpandedArticleViewProps> = ({ article, layo
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4 md:p-8"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8"
       onClick={onClose}
     >
       <motion.div
@@ -92,11 +114,11 @@ const ExpandedArticleView: React.FC<ExpandedArticleViewProps> = ({ article, layo
               className="font-serif text-3xl md:text-4xl leading-tight text-gray-900 dark:text-gray-100 mb-4 pr-10"
               style={{ fontFamily: "Instrument Serif, serif" }}
             >
-              {cleanTitle(article.title)}
+              {highlightMatches(cleanTitle(article.title), searchQuery, lightGradientValue)}
             </h2>
 
             <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none font-sans text-gray-800 dark:text-gray-200 mb-6 text-justify">
-              <p>{article.content || article.digest}</p>
+              {highlightMatches(article.content || article.digest, searchQuery, lightGradientValue)}
             </div>
           </div>
 

@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 // Only import necessary types from lib/types
-import type { Article, ArticlesApiResponse, Topic } from "../lib/types";
+import type { Article, ArticlesApiResponse, Topic, AuthorSource } from "../lib/types";
 
 const API_URL = "http://localhost:3000/articles";
 
 export function useArticles() {
-  // Keep only articles, topics, loading, and error state
+  const [allFetchedArticles, setAllFetchedArticles] = useState<Article[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [positiveArticles, setPositiveArticles] = useState<Article[]>([]);
   const [negativeArticles, setNegativeArticles] = useState<Article[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [allAuthors, setAllAuthors] = useState<string[]>([]);
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -18,6 +20,14 @@ export function useArticles() {
     const fetchArticles = async () => {
       setLoading(true);
       setError(null);
+      setAllFetchedArticles([]);
+      setArticles([]);
+      setPositiveArticles([]);
+      setNegativeArticles([]);
+      setTopics([]);
+      setAllAuthors([]);
+      setSelectedAuthors([]);
+
       try {
         const response = await axios.get<ArticlesApiResponse>(API_URL);
         const data = response.data;
@@ -28,8 +38,8 @@ export function useArticles() {
         }
 
         // Process articles: just add id (or validate if needed)
-        let processedArticles = data.articles.map(article => {
-          if (!article || typeof article !== 'object' || !article.url || !article.topic) {
+        let processed = data.articles.map(article => {
+          if (!article || typeof article !== 'object' || !article.url || !article.topic || !article.author) {
             console.warn("Skipping invalid or topic-less article object:", article);
             return null;
           }
@@ -40,20 +50,16 @@ export function useArticles() {
         }).filter((article): article is Article => article !== null);
 
         // --- Shuffle the processed articles --- 
-        for (let i = processedArticles.length - 1; i > 0; i--) {
+        for (let i = processed.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [processedArticles[i], processedArticles[j]] = [processedArticles[j], processedArticles[i]]; // Swap elements
+            [processed[i], processed[j]] = [processed[j], processed[i]]; // Swap elements
         }
         // ---------------------------------------
 
-        // Extract unique topics from the shuffled array
-        const uniqueTopics = Array.from(new Set(processedArticles.map(article => article.topic)));
+        setAllFetchedArticles(processed);
 
-        // Set state using the SHUFFLED array
-        setArticles(processedArticles);
-        setPositiveArticles(processedArticles.filter(article => article.sentiment === "positive"));
-        setNegativeArticles(processedArticles.filter(article => article.sentiment === "negative"));
-        setTopics(uniqueTopics); // Set the unique topics
+        const uniqueAuthors = Array.from(new Set(processed.map(a => a.author))).sort();
+        setAllAuthors(uniqueAuthors);
 
       } catch (err) {
         // Simplified error handling for now
@@ -68,6 +74,36 @@ export function useArticles() {
     fetchArticles();
   }, []);
 
-  // Return topics and articles, loading, and error
-  return { articles, positiveArticles, negativeArticles, topics, loading, error };
+  useEffect(() => {
+    let filtered = allFetchedArticles;
+    if (selectedAuthors.length > 0) {
+      filtered = allFetchedArticles.filter(article =>
+        selectedAuthors.includes(article.author)
+      );
+    }
+
+    setArticles(filtered);
+    setPositiveArticles(filtered.filter(article => article.sentiment === "positive"));
+    setNegativeArticles(filtered.filter(article => article.sentiment === "negative"));
+
+    const uniqueTopics = Array.from(new Set(filtered.map(article => article.topic)));
+    setTopics(uniqueTopics);
+
+  }, [allFetchedArticles, selectedAuthors]);
+
+  const updateSelectedAuthors = useCallback((newSelection: string[]) => {
+    setSelectedAuthors(newSelection);
+  }, []);
+
+  return {
+    articles, 
+    positiveArticles, 
+    negativeArticles, 
+    topics, 
+    allAuthors, 
+    selectedAuthors, 
+    updateSelectedAuthors, 
+    loading, 
+    error 
+  };
 }

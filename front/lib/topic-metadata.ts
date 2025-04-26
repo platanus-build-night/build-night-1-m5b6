@@ -1,4 +1,4 @@
-import { Topic } from "./types"; // Import the Topic enum
+import { Topic, AuthorSource } from "./types"; // Make sure AuthorSource is imported
 
 // --- Topic Metadata Mappings ---
 export const topicNames: Record<Topic, string> = {
@@ -134,3 +134,13 @@ export const getTopicIcon = (topic: Topic): string => {
       return "QuestionMarkCircleIcon";
   }
 };
+
+// --- Author/Source Metadata ---
+export const sourceIcon: Record<AuthorSource, { symbol?: string; src?: string }> = {
+  "Emol": { src: "/emol.jpg" },
+  "T13": { src: "/t13.webp" },
+  "LaTercera": { src: "/lt.jpg" },
+  "ElPais": { src: "/elpais.png" },
+  "ElMostrador": { src: "/elmostrador.png" }, 
+};
+

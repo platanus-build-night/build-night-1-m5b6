@@ -4,17 +4,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Article, AuthorSource } from "@/lib/types";
-import { getTopicGradient, getLightTopicGradient } from "@/lib/topic-metadata";
+import { getTopicGradient, getLightTopicGradient, sourceIcon   } from "@/lib/topic-metadata";
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/20/solid';
-
-// Map sources to SF Symbols where possible, else fallback image
-const sourceIcon: Record<AuthorSource, { symbol?: string; src?: string }> = {
-  Emol: { src: "/emol.jpg" },
-  T13: { src: "/t13.webp" }, // SF Symbol example
-  LaTercera: { src: "/lt.jpg" },
-  ElPais: { src: "/elpais.png" },
-  ElMostrador: { src: "/elmostrador.png" },
-};
 
 const cleanTitle = (t: string) =>
   t

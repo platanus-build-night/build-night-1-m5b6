@@ -13,6 +13,7 @@ import * as HeroIconsSolid from '@heroicons/react/24/solid';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'; // Import pagination icons and search icon
 import ArticleCard from "@/components/article-card"; // Import the new component
 import ExpandedArticleView from "@/components/expanded-article-view"; // Import new component
+import AuthorFilterSidebar from "@/components/author-filter-sidebar"; // Import sidebar
 // import MovingTitlesBackground from "@/components/moving-titles-background"; // Import the new component
 
 // Combine icon sets for easier lookup
@@ -58,12 +59,19 @@ export default function TopicPage() {
     const params = useParams();
     const router = useRouter();
     const { topic: topicParam } = params; // Get topic from URL
-    const { positiveArticles, negativeArticles, loading, error } = useArticles(); // Fetch all articles
+    const {
+        articles, // This list is now author-filtered by the hook
+        allAuthors,
+        selectedAuthors,
+        updateSelectedAuthors,
+        loading,
+        error
+    } = useArticles();
 
     const [topicGradient, setTopicGradient] = useState<string>("");
     const [topicDisplayName, setTopicDisplayName] = useState<string>("");
-    const [filteredArticles, setFilteredArticles] = useState<Article[]>([]); // Topic-filtered (and sorted)
-    const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]); // Search-filtered subset
+    const [filteredArticles, setFilteredArticles] = useState<Article[]>([]); // Topic-filtered subset of hook's articles
+    const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]); // Search-filtered subset of topic-filtered
     const [TopicIconComponent, setTopicIconComponent] = useState<React.ElementType | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [isReady, setIsReady] = useState(false);
@@ -75,22 +83,24 @@ export default function TopicPage() {
     const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false); // State for search focus
     const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null); // State for expanded card
 
-    // Effect 1: Filter by topic and sort (runs on initial load, topic change)
+    // Effect 1: Filter by topic (based on author-filtered articles from hook)
     useEffect(() => {
         if (loading || !topicParam) return;
         const currentTopic = topicParam as Topic;
+        const baseArticles = articles; // Use author-filtered articles from hook
 
         if (topicNames[currentTopic]) {
             const gradient = getTopicGradient(currentTopic); // Use original gradient
             const displayName = topicNames[currentTopic];
             const iconName = getTopicIcon(currentTopic);
 
-            let topicArticles = positiveArticles.filter(
+            // Filter the author-filtered list by topic
+            let topicFiltered = baseArticles.filter(
                 (article) => article.topic === currentTopic
             );
 
-            // Keep sorting by newest for now
-            topicArticles.sort((a, b) => {
+            // Sort
+            topicFiltered.sort((a, b) => {
                 const dateA = new Date(a.publishedDate).getTime();
                 const dateB = new Date(b.publishedDate).getTime();
                 return dateB - dateA; // Sort newest first
@@ -98,8 +108,7 @@ export default function TopicPage() {
 
             setTopicGradient(gradient);
             setTopicDisplayName(displayName);
-            setFilteredArticles(topicArticles); // Set the base filtered/sorted list
-            // Don't reset current page here, let the search effect handle it
+            setFilteredArticles(topicFiltered); // Set Topic & Author filtered list
 
             // Dynamically get the icon component
             const Icon = (allIcons as any)[iconName];
@@ -119,23 +128,23 @@ export default function TopicPage() {
             setTopicIconComponent(null);
             setCurrentPage(0);
         }
-    }, [loading, positiveArticles, topicParam, router]);
+    }, [loading, articles, topicParam, router]);
 
-    // Effect 2: Filter displayed articles based on ACTIVE search query
+    // Effect 2: Search Filter (based on topic & author filtered list)
     useEffect(() => {
-        const lowerCaseQuery = activeSearchQuery.toLowerCase(); // Use active query
+        const lowerCaseQuery = activeSearchQuery.toLowerCase();
         if (!lowerCaseQuery) {
-            setDisplayedArticles(filteredArticles); // No active query, show all topic-filtered
+            setDisplayedArticles(filteredArticles); // Use topic/author filtered list
         } else {
             const searched = filteredArticles.filter(article =>
                 article.title.toLowerCase().includes(lowerCaseQuery) ||
-                article.digest.toLowerCase().includes(lowerCaseQuery)
+                article.digest.toLowerCase().includes(lowerCaseQuery) ||
+                (article.content && article.content.toLowerCase().includes(lowerCaseQuery))
             );
             setDisplayedArticles(searched);
         }
-        setCurrentPage(0); // Reset page whenever active query or base list changes
-
-    }, [activeSearchQuery, filteredArticles]); // Depend on activeSearchQuery
+        setCurrentPage(0);
+    }, [activeSearchQuery, filteredArticles]);
 
     // Effect 3: Control ready state (no change needed)
     useEffect(() => {
@@ -281,10 +290,10 @@ export default function TopicPage() {
         <>
             <AnimatePresence>
                 {/* Loading Overlay */}
-                {!isReady && !isNavigatingBack && ( // Only show if not ready AND not navigating back
+                {!isReady && !isNavigatingBack && (
                     <motion.div
                         key="loading-screen"
-                        className="fixed inset-0 flex flex-col min-h-screen items-center justify-center bg-white z-50"
+                        className="fixed inset-0 flex flex-col min-h-screen items-center justify-center bg-white z-30"
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0, transition: { duration: 0.3 } }}
                     >
@@ -298,13 +307,13 @@ export default function TopicPage() {
                 {isNavigatingBack && (
                     <motion.div
                         key="back-nav-screen"
-                        className="fixed inset-0 flex items-center justify-center bg-white z-50"
+                        className="fixed inset-0 flex items-center justify-center bg-white z-30"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }} // Exit may not be visible due to navigation
+                        exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
                         onAnimationComplete={() => {
-                            router.push('/'); // Navigate once overlay is visible
+                            router.push('/');
                         }}
                     >
                         <h1 className="font-serif text-4xl text-black">houp.cl</h1>
@@ -472,9 +481,19 @@ export default function TopicPage() {
                         article={expandedArticle}
                         layoutId={expandedArticle.id} // Pass same layoutId
                         onClose={() => setExpandedArticleId(null)} // Pass close handler
+                        searchQuery={activeSearchQuery} // Pass the active search query
                     />
                 )}
             </AnimatePresence>
+
+            {/* Author Filter Sidebar - Render outside main content flow */}
+            {!loading && allAuthors.length > 0 && (
+                <AuthorFilterSidebar
+                    allAuthors={allAuthors}
+                    selectedAuthors={selectedAuthors}
+                    onSelectionChange={updateSelectedAuthors}
+                />
+            )}
         </>
     );
 }
