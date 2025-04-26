@@ -24,6 +24,7 @@ export interface Article {
   digest: string;
   createdAt: string;
   updatedAt: string;
+  score: number;
 }
 
 export interface ArticlesApiResponse {

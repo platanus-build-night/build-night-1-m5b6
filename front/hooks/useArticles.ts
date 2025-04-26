@@ -28,7 +28,7 @@ export function useArticles() {
         }
 
         // Process articles: just add id (or validate if needed)
-        const processedArticles = data.articles.map(article => {
+        let processedArticles = data.articles.map(article => {
           if (!article || typeof article !== 'object' || !article.url || !article.topic) {
             console.warn("Skipping invalid or topic-less article object:", article);
             return null;
@@ -39,10 +39,17 @@ export function useArticles() {
           };
         }).filter((article): article is Article => article !== null);
 
-        // Extract unique topics
+        // --- Shuffle the processed articles --- 
+        for (let i = processedArticles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [processedArticles[i], processedArticles[j]] = [processedArticles[j], processedArticles[i]]; // Swap elements
+        }
+        // ---------------------------------------
+
+        // Extract unique topics from the shuffled array
         const uniqueTopics = Array.from(new Set(processedArticles.map(article => article.topic)));
 
-        // Set the articles state directly
+        // Set state using the SHUFFLED array
         setArticles(processedArticles);
         setPositiveArticles(processedArticles.filter(article => article.sentiment === "positive"));
         setNegativeArticles(processedArticles.filter(article => article.sentiment === "negative"));

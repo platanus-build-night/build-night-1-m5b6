@@ -12,6 +12,7 @@ import { getTopicGradient, topicNames, getTopicIcon } from "@/lib/topic-metadata
 import * as HeroIconsSolid from '@heroicons/react/24/solid';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'; // Import pagination icons and search icon
 import ArticleCard from "@/components/article-card"; // Import the new component
+import ExpandedArticleView from "@/components/expanded-article-view"; // Import new component
 // import MovingTitlesBackground from "@/components/moving-titles-background"; // Import the new component
 
 // Combine icon sets for easier lookup
@@ -44,14 +45,11 @@ const slideVariants = {
 // Search bar animation variants
 const searchBarVariants = {
     inactive: {
-        width: "30em", // Expand to full width of parent container (max-w-md)
-        maxWidth: "100%", // max-w-md = 28rem
-
+        width: "24rem", // Specific inactive width (adjust as needed)
+        transition: { duration: 0.3, ease: "easeInOut" }
     },
     active: {
-
-        width: "100%", // Expand to full width of parent container (max-w-md)
-        maxWidth: "100%", // max-w-md = 28rem
+        width: "100%", // Expand to full width of parent
         transition: { duration: 0.3, ease: "easeInOut" }
     }
 };
@@ -75,6 +73,7 @@ export default function TopicPage() {
     const [activeSearchQuery, setActiveSearchQuery] = useState<string>(""); // State for the active search filter
     const searchInputRef = useRef<HTMLInputElement>(null); // Ref for search input
     const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false); // State for search focus
+    const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null); // State for expanded card
 
     // Effect 1: Filter by topic and sort (runs on initial load, topic change)
     useEffect(() => {
@@ -150,19 +149,65 @@ export default function TopicPage() {
         }
     }, [loading, topicDisplayName]);
 
-    // Effect 4: Keyboard shortcut listener (Cmd+K and Escape)
+    // Effect 4: Keyboard shortcut listener (Cmd+K, Escape, Option+Symbol)
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            // Cmd+K or Ctrl+K to focus
+            console.log("Key pressed:", event.key, "Alt key:", event.altKey); // Log key press
+
+            // Cmd+K or Ctrl+K to focus search
             if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
                 event.preventDefault();
                 searchInputRef.current?.focus();
+                return; // Don't process other shortcuts if this matches
             }
 
-            // Escape key to blur if focused
+            // Escape key to blur search or close modal
             if (event.key === 'Escape') {
                 if (document.activeElement === searchInputRef.current) {
                     searchInputRef.current?.blur();
+                } else if (expandedArticleId) { // Close expanded view if open
+                    setExpandedArticleId(null);
+                }
+                return; // Don't process other shortcuts
+            }
+
+            // Option + Symbol mapped to 1/2/3/4
+            const keyMappings: { [key: string]: number } = {
+                '¡': 1, // Option+1 typically
+                '“': 2, // Option+2 typically
+                '£': 3, // Option+3 typically
+                '¢': 4, // Option+4 typically
+                // Add other potential mappings if needed for different layouts/OS
+            };
+
+            if (event.altKey && keyMappings[event.key]) {
+                console.log(`Option + Symbol (${event.key}) detected`);
+
+                if (document.activeElement === searchInputRef.current) {
+                    console.log("Search input focused, ignoring card shortcut.");
+                    return;
+                }
+
+                event.preventDefault();
+                const keyNumber = keyMappings[event.key];
+                const targetIndex = keyNumber - 1; // Convert 1-4 to index 0-3
+                console.log("Target index:", targetIndex);
+
+                const currentStartIndex = currentPage * ITEMS_PER_PAGE;
+                const currentEndIndex = currentStartIndex + ITEMS_PER_PAGE;
+                const articlesOnPage = displayedArticles.slice(currentStartIndex, currentEndIndex);
+                console.log("Articles on page count:", articlesOnPage.length);
+
+                if (targetIndex >= 0 && targetIndex < articlesOnPage.length) {
+                    const articleToOpen = articlesOnPage[targetIndex];
+                    if (articleToOpen) {
+                        console.log("Opening article:", articleToOpen.id);
+                        setExpandedArticleId(articleToOpen.id);
+                    } else {
+                        console.log("Article at index not found?");
+                    }
+                } else {
+                    console.log("Target index out of bounds.");
                 }
             }
         };
@@ -171,7 +216,8 @@ export default function TopicPage() {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []); // Empty dependency array ensures this runs only once
+    // Dependencies: Include everything needed to calculate articlesOnPage and check state
+    }, [displayedArticles, currentPage, expandedArticleId]);
 
     // Calculate pagination based on DISPLAYED articles
     const totalPages = Math.ceil(displayedArticles.length / ITEMS_PER_PAGE);
@@ -213,6 +259,11 @@ export default function TopicPage() {
         router.prefetch('/'); // Prefetch home route
         setIsNavigatingBack(true); // Trigger back navigation animation
     };
+
+    // --- Find the currently expanded article ---
+    const expandedArticle = displayedArticles.find(
+        (article) => article.id === expandedArticleId
+    );
 
     // Handle Error State First (if an error occurs, we likely don't want to show content)
     if (error) {
@@ -265,8 +316,8 @@ export default function TopicPage() {
             <motion.div
                 className="flex flex-col min-h-screen"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: isReady && !isNavigatingBack ? 1 : 0 }} // Fade in when ready, fade out if navigating back
-                transition={{ duration: 0.3 }} // Use same duration for fade in/out
+                animate={{ opacity: isReady && !isNavigatingBack && !expandedArticleId ? 1 : 0.5 }}
+                transition={{ duration: 0.3 }}
             >
                 <motion.main
                     className="flex-grow flex flex-col items-center p-6 pb-16 relative overflow-visible bg-gray-50 dark:bg-gray-900"
@@ -298,10 +349,10 @@ export default function TopicPage() {
                         </div>
 
                         {/* Search Bar - Centered, Animated, Apple-like */}
-                        <div className="mb-8 flex justify-center items-center gap-2"> {/* Added gap */}
+                        <div className=" flex justify-center items-center gap-2"> {/* Added gap */}
                             {/* Animated container for input/icon/hint */}
                             <motion.div
-                                className="relative" // Keep relative for positioning inside
+                                className="relative max-w-lg" // Use max-w-lg or max-w-md as the constraint
                                 variants={searchBarVariants}
                                 animate={isSearchFocused ? "active" : "inactive"}
                             >
@@ -314,7 +365,7 @@ export default function TopicPage() {
                                     onKeyDown={handleSearchKeyDown}
                                     onFocus={() => setIsSearchFocused(true)}
                                     onBlur={() => setIsSearchFocused(false)}
-                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 pl-10 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300" // Added pr-12 for hint/button space
+                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 pl-10 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" // Removed transition-all, rely on motion
                                 />
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
@@ -353,7 +404,7 @@ export default function TopicPage() {
                                 {/* Grid container */}
                                 <motion.div
                                     key={currentPage + activeSearchQuery} // Use activeSearchQuery in key
-                                    className="absolute flex flex-wrap justify-center gap-6" // Added absolute
+                                    className={`absolute flex flex-wrap justify-center gap-6 ${expandedArticleId ? 'pointer-events-none' : ''}`} // Disable clicks on grid when expanded
                                     custom={slideDirection}
                                     variants={slideVariants}
                                     initial="initial"
@@ -361,12 +412,16 @@ export default function TopicPage() {
                                     exit="exit"
                                 >
                                     {currentArticles.length > 0 ? (
-                                        currentArticles.map((article, index) => (
-                                            <ArticleCard 
-                                                key={article.id} 
-                                                article={article} 
-                                                index={index} 
-                                                searchQuery={activeSearchQuery} // Pass active query
+                                        currentArticles.map((article, pageIndex) => (
+                                            <ArticleCard
+                                                key={article.id}
+                                                article={article}
+                                                index={pageIndex} // Keep original index for potential stagger
+                                                pageIndex={pageIndex} // Pass index within the page (0-3)
+                                                searchQuery={activeSearchQuery}
+                                                layoutId={article.id}
+                                                onClick={() => setExpandedArticleId(article.id)}
+                                                isExpanded={expandedArticleId === article.id}
                                             />
                                         ))
                                     ) : (
@@ -380,7 +435,7 @@ export default function TopicPage() {
                     </div>
                 </motion.main>
 
-                {totalPages > 1 && (
+                {totalPages > 1 && !expandedArticleId && (
                     <div
                         className="fixed bottom-0 left-0 right-0 flex justify-center items-center space-x-4 p-2 z-20"
                     >
@@ -408,6 +463,18 @@ export default function TopicPage() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Expanded Article View - Rendered outside main container */}
+            <AnimatePresence>
+                {expandedArticle && (
+                    <ExpandedArticleView
+                        key="expanded-article" // Consistent key for AnimatePresence
+                        article={expandedArticle}
+                        layoutId={expandedArticle.id} // Pass same layoutId
+                        onClose={() => setExpandedArticleId(null)} // Pass close handler
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }
