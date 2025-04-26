@@ -19,6 +19,10 @@ export const topicPhonetics: Record<Topic, string> = {
   business:"ne-GO-sjos",     // Negocios
 };
 
+export const getTopicPhonetic = (topic: Topic): string => {
+  return topicPhonetics[topic];
+};
+
 
 export const getTopicGradient = (topic: Topic): string => {
   switch (topic) {

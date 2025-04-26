@@ -7,7 +7,7 @@ import DayNightVisor from "@/components/day-night-visor";
 import Footer from "@/components/footer";
 import { useArticlesContext } from "@/context/ArticlesContext"; // Import context hook
 import { Topic, Article } from "@/lib/types"; // Import Article type
-import { getTopicGradient, topicNames, getTopicIcon } from "@/lib/topic-metadata"; // Use original gradient
+import { getTopicGradient, topicNames, getTopicIcon, getTopicPhonetic } from "@/lib/topic-metadata"; // Use original gradient
 // Import specific Heroicons dynamically later or directly if few
 import * as HeroIconsSolid from '@heroicons/react/24/solid';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'; // Import pagination icons and search icon
@@ -328,9 +328,12 @@ export default function TopicPage() {
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0, transition: { duration: 0.3 } }}
                     >
-                        <h1 className="font-serif text-4xl text-black">
+                        <h1 className="font-serif text-5xl font-bold mb-1 text-black">
                             {loadingDisplayName}
                         </h1>
+                        <small className="text-sm font-normal text-gray-600 mb-4">
+                            /{getTopicPhonetic(currentTopic)}/
+                        </small>
                     </motion.div>
                 )}
 

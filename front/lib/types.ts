@@ -6,18 +6,7 @@ export const enum Topic {
   Sports = "sports",
   Business = "business",
 }
-export const topicPhonetics = {
-  social: "soh-shel",
-  science: "sah-sint",
-  tech: "tek-no-lo-jee",
-  arts: "arts",
-  sports: "sports",
-  business: "biz-nes",
-};
 
-const getTopicPhonetic = (topic: Topic) => {
-  return topicPhonetics[topic];
-};
 
 export enum Sentiment {
   Positive = "positive",
