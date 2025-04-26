@@ -21,5 +21,6 @@ export const generateAndAddAnalysisToArticle = async (
     topic: toolResult.topic,
     positivityScore: toolResult.positivityScore,
     digest: toolResult.digest,
+    score: toolResult.positivityScore,
   };
 };
