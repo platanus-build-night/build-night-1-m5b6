@@ -159,7 +159,7 @@ class EmolScraper {
     );
 
     try {
-      await saveArticles(analysedArticles as Article[]);
+      await saveArticles(analysedArticles as unknown as Article[]);
     } catch (error) {
       console.error(
         `Error saving analysed articles: ${(error as Error).message}`

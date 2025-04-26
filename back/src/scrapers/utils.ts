@@ -5,7 +5,7 @@ export const generateAndAddAnalysisToArticle = async (
   article: ScrapedArticleDetail
 ) => {
   const agentResult = await articleAnalyzerAgent.generate(
-    `Perform a full analysis (sentiment, topic, digest) of the following article text and report using the tool:
+    `Realiza un análisis completo (sentimiento, tema, puntuación de positividad, digest) del siguiente texto del artículo y repórtalo usando la herramienta:
 \n---\n${article.content}\n---"`,
     {
       toolChoice: "required",
@@ -19,6 +19,7 @@ export const generateAndAddAnalysisToArticle = async (
     ...article,
     sentiment: toolResult.sentiment,
     topic: toolResult.topic,
+    positivityScore: toolResult.positivityScore,
     digest: toolResult.digest,
   };
 };

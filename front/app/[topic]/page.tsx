@@ -10,7 +10,7 @@ import { Topic, Article } from "@/lib/types"; // Import Article type
 import { getTopicGradient, topicNames, getTopicIcon } from "@/lib/topic-metadata"; // Use original gradient
 // Import specific Heroicons dynamically later or directly if few
 import * as HeroIconsSolid from '@heroicons/react/24/solid';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid'; // Import pagination icons
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'; // Import pagination icons and search icon
 import ArticleCard from "@/components/article-card"; // Import the new component
 // import MovingTitlesBackground from "@/components/moving-titles-background"; // Import the new component
 
@@ -49,34 +49,41 @@ export default function TopicPage() {
 
     const [topicGradient, setTopicGradient] = useState<string>("");
     const [topicDisplayName, setTopicDisplayName] = useState<string>("");
-    const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+    const [filteredArticles, setFilteredArticles] = useState<Article[]>([]); // Topic-filtered (and sorted)
+    const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]); // Search-filtered subset
     const [TopicIconComponent, setTopicIconComponent] = useState<React.ElementType | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [isReady, setIsReady] = useState(false);
     const [isNavigatingBack, setIsNavigatingBack] = useState(false);
-    const [slideDirection, setSlideDirection] = useState<number>(1); // 1 for next, -1 for previous
+    const [slideDirection, setSlideDirection] = useState<number>(1);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [activeSearchQuery, setActiveSearchQuery] = useState<string>(""); // State for the active search filter
 
-    // Effect to process data once articles load and topic is known
+    // Effect 1: Filter by topic and sort (runs on initial load, topic change)
     useEffect(() => {
-        if (loading || !topicParam) return; // Wait for loading and param
+        if (loading || !topicParam) return;
+        const currentTopic = topicParam as Topic;
 
-        const currentTopic = topicParam as Topic; // Assume param is a valid Topic key
-
-        // Validate if the topic exists in our defined topics
         if (topicNames[currentTopic]) {
             const gradient = getTopicGradient(currentTopic); // Use original gradient
             const displayName = topicNames[currentTopic];
             const iconName = getTopicIcon(currentTopic);
 
-            // Filter articles for the current topic
-            const topicArticles = positiveArticles.filter(
+            let topicArticles = positiveArticles.filter(
                 (article) => article.topic === currentTopic
             );
 
+            // Keep sorting by newest for now
+            topicArticles.sort((a, b) => {
+                const dateA = new Date(a.publishedDate).getTime();
+                const dateB = new Date(b.publishedDate).getTime();
+                return dateB - dateA; // Sort newest first
+            });
+
             setTopicGradient(gradient);
             setTopicDisplayName(displayName);
-            setFilteredArticles(topicArticles);
-            setCurrentPage(0); // Reset to first page when topic changes or articles load
+            setFilteredArticles(topicArticles); // Set the base filtered/sorted list
+            // Don't reset current page here, let the search effect handle it
 
             // Dynamically get the icon component
             const Icon = (allIcons as any)[iconName];
@@ -86,20 +93,35 @@ export default function TopicPage() {
                 console.warn(`Icon "${iconName}" not found.`);
                 setTopicIconComponent(null); // Or set a default icon component
             }
-
         } else {
             // Handle case where topic is invalid (e.g., redirect or show not found)
             console.error(`Invalid topic: ${currentTopic}`);
             // Optionally redirect: router.push('/404');
             setTopicDisplayName("Tema no encontrado");
-            setFilteredArticles([]);
+            setFilteredArticles([]); // Clear articles if topic is invalid
             setTopicGradient(getTopicGradient("default" as Topic)); // Use original gradient for default
             setTopicIconComponent(null);
             setCurrentPage(0);
         }
-    }, [loading, positiveArticles, topicParam, router]); // Removed router from dependency array if not strictly needed for this effect's logic
+    }, [loading, positiveArticles, topicParam, router]);
 
-    // Effect to control the ready state for animations
+    // Effect 2: Filter displayed articles based on ACTIVE search query
+    useEffect(() => {
+        const lowerCaseQuery = activeSearchQuery.toLowerCase(); // Use active query
+        if (!lowerCaseQuery) {
+            setDisplayedArticles(filteredArticles); // No active query, show all topic-filtered
+        } else {
+            const searched = filteredArticles.filter(article =>
+                article.title.toLowerCase().includes(lowerCaseQuery) ||
+                article.digest.toLowerCase().includes(lowerCaseQuery)
+            );
+            setDisplayedArticles(searched);
+        }
+        setCurrentPage(0); // Reset page whenever active query or base list changes
+
+    }, [activeSearchQuery, filteredArticles]); // Depend on activeSearchQuery
+
+    // Effect 3: Control ready state (no change needed)
     useEffect(() => {
         if (!loading && topicDisplayName) {
             // Use a small timeout if needed to ensure loading screen appears briefly
@@ -111,11 +133,12 @@ export default function TopicPage() {
         }
     }, [loading, topicDisplayName]);
 
-    // Calculate pagination variables
-    const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+    // Calculate pagination based on DISPLAYED articles
+    const totalPages = Math.ceil(displayedArticles.length / ITEMS_PER_PAGE);
     const startIndex = currentPage * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentArticles = filteredArticles.slice(startIndex, endIndex);
+    // Slice DISPLAYED articles for the current page
+    const currentArticles = displayedArticles.slice(startIndex, endIndex);
 
     // Pagination handlers
     const goToNextPage = () => {
@@ -131,6 +154,14 @@ export default function TopicPage() {
     // Pre-calculate loading display name
     const currentTopic = topicParam as Topic;
     const loadingDisplayName = topicNames[currentTopic] || "Cargando...";
+
+    // Input key down handler
+    const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent potential form submission
+            setActiveSearchQuery(searchTerm); // Set the active query on Enter
+        }
+    };
 
     // Back button handler
     const handleBackClick = () => {
@@ -198,7 +229,7 @@ export default function TopicPage() {
                     {/* Content Container */}
                     <div className="relative z-10 w-full max-w-4xl mx-auto flex-grow flex flex-col">
                         {/* Header Area - Centered Chip */}
-                        <div className="flex justify-between items-center ">
+                        <div className="flex justify-between items-center mb-4">
                             <button
                                 onClick={handleBackClick} // Use the new handler
                                 className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-full p-2 transition-colors"
@@ -221,6 +252,23 @@ export default function TopicPage() {
                             </div>
                         </div>
 
+                        {/* Search Bar - Centered, Apple-like */}
+                        <div className="mb-8 flex justify-center"> {/* Centered container, increased mb */}
+                            <div className="relative w-full max-w-md"> {/* Relative container for icon */}
+                                <input 
+                                    type="text"
+                                    placeholder="Buscar noticias..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={handleSearchKeyDown} // Add key down handler
+                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 px-10 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400" // Rounded, bg, padding for icon
+                                />
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> {/* Icon container */}
+                                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* DayNightVisor - Placed below header, centered maybe? */}
                         <div className="flex justify-center my-4">
                             {/* Consider if DayNightVisor is needed here or handled globally */}
@@ -233,7 +281,7 @@ export default function TopicPage() {
                             <AnimatePresence initial={false} custom={slideDirection}>
                                 {/* Grid container */}
                                 <motion.div
-                                    key={currentPage}
+                                    key={currentPage + activeSearchQuery} // Use activeSearchQuery in key
                                     className="absolute flex flex-wrap justify-center gap-6" // Added absolute
                                     custom={slideDirection}
                                     variants={slideVariants}
@@ -247,8 +295,8 @@ export default function TopicPage() {
                                             <ArticleCard key={article.id} article={article} index={index} />
                                         ))
                                     ) : (
-                                        <div className="col-span-full text-center text-black py-10">
-                                            <p>No hay noticias para mostrar en este momento.</p>
+                                        <div className="col-span-full text-center text-gray-500 dark:text-gray-400 py-10 w-full">
+                                            <p>No se encontraron noticias {activeSearchQuery ? 'para "'+activeSearchQuery+'"' : ''}.</p>
                                         </div>
                                     )}
                                 </motion.div>
@@ -271,7 +319,7 @@ export default function TopicPage() {
                             <ChevronLeftIcon className="h-5 w-5 text-white" />
                         </button>
                         <span className="font-medium text-sm text-black dark:text-white">
-                            Página {currentPage + 1} de {totalPages}
+                            Página {currentPage + 1} de {Math.ceil(displayedArticles.length / ITEMS_PER_PAGE)}
                         </span>
                         <button
                             onClick={goToNextPage}

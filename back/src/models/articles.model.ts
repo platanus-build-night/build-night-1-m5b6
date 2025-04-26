@@ -26,6 +26,13 @@ export class Article implements IScrapedArticleDetail {
   @Column({ type: "varchar", nullable: true }) // Storing as varchar as per interface
   publishedDate?: string;
 
+  @Column({
+    type: "integer",
+    nullable: true,
+    default: 0,
+  })
+  score?: number;
+
   @Column({ type: "text" }) // Use 'text' for potentially long content
   content!: string;
 
