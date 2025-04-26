@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import DayNightVisor from "@/components/day-night-visor";
@@ -41,6 +41,21 @@ const slideVariants = {
     }),
 };
 
+// Search bar animation variants
+const searchBarVariants = {
+    inactive: {
+        width: "30em", // Expand to full width of parent container (max-w-md)
+        maxWidth: "100%", // max-w-md = 28rem
+
+    },
+    active: {
+
+        width: "100%", // Expand to full width of parent container (max-w-md)
+        maxWidth: "100%", // max-w-md = 28rem
+        transition: { duration: 0.3, ease: "easeInOut" }
+    }
+};
+
 export default function TopicPage() {
     const params = useParams();
     const router = useRouter();
@@ -58,6 +73,8 @@ export default function TopicPage() {
     const [slideDirection, setSlideDirection] = useState<number>(1);
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [activeSearchQuery, setActiveSearchQuery] = useState<string>(""); // State for the active search filter
+    const searchInputRef = useRef<HTMLInputElement>(null); // Ref for search input
+    const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false); // State for search focus
 
     // Effect 1: Filter by topic and sort (runs on initial load, topic change)
     useEffect(() => {
@@ -133,6 +150,29 @@ export default function TopicPage() {
         }
     }, [loading, topicDisplayName]);
 
+    // Effect 4: Keyboard shortcut listener (Cmd+K and Escape)
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Cmd+K or Ctrl+K to focus
+            if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+                event.preventDefault();
+                searchInputRef.current?.focus();
+            }
+
+            // Escape key to blur if focused
+            if (event.key === 'Escape') {
+                if (document.activeElement === searchInputRef.current) {
+                    searchInputRef.current?.blur();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []); // Empty dependency array ensures this runs only once
+
     // Calculate pagination based on DISPLAYED articles
     const totalPages = Math.ceil(displayedArticles.length / ITEMS_PER_PAGE);
     const startIndex = currentPage * ITEMS_PER_PAGE;
@@ -155,12 +195,17 @@ export default function TopicPage() {
     const currentTopic = topicParam as Topic;
     const loadingDisplayName = topicNames[currentTopic] || "Cargando...";
 
-    // Input key down handler
+    // Search Handlers
     const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent potential form submission
-            setActiveSearchQuery(searchTerm); // Set the active query on Enter
+            event.preventDefault();
+            setActiveSearchQuery(searchTerm);
+            searchInputRef.current?.blur(); // Optionally blur on enter
         }
+    };
+    const handleSearchSubmit = () => {
+        setActiveSearchQuery(searchTerm);
+        searchInputRef.current?.blur(); // Optionally blur on submit
     };
 
     // Back button handler
@@ -252,21 +297,47 @@ export default function TopicPage() {
                             </div>
                         </div>
 
-                        {/* Search Bar - Centered, Apple-like */}
-                        <div className="mb-8 flex justify-center"> {/* Centered container, increased mb */}
-                            <div className="relative w-full max-w-md"> {/* Relative container for icon */}
-                                <input 
+                        {/* Search Bar - Centered, Animated, Apple-like */}
+                        <div className="mb-8 flex justify-center items-center gap-2"> {/* Added gap */}
+                            {/* Animated container for input/icon/hint */}
+                            <motion.div
+                                className="relative" // Keep relative for positioning inside
+                                variants={searchBarVariants}
+                                animate={isSearchFocused ? "active" : "inactive"}
+                            >
+                                <input
+                                    ref={searchInputRef} // Assign ref
                                     type="text"
-                                    placeholder="Buscar noticias..."
+                                    placeholder={isSearchFocused ? "Buscar..." : "Buscar..."} // Change placeholder based on focus
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={handleSearchKeyDown} // Add key down handler
-                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 px-10 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400" // Rounded, bg, padding for icon
+                                    onKeyDown={handleSearchKeyDown}
+                                    onFocus={() => setIsSearchFocused(true)}
+                                    onBlur={() => setIsSearchFocused(false)}
+                                    className="w-full rounded-full border-none bg-gray-100 dark:bg-gray-700 pl-10 pr-12 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300" // Added pr-12 for hint/button space
                                 />
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> {/* Icon container */}
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                                 </div>
-                            </div>
+                                {/* Cmd+K Hint - Show when inactive and empty */}
+                                {!isSearchFocused && !searchTerm && (
+                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-xs font-sans text-gray-400 dark:text-gray-500">
+                                            ⌘K
+                                        </kbd>
+                                    </div>
+                                )}
+                            </motion.div>
+                            {/* Submit Button */}
+                            <button
+                                onClick={handleSearchSubmit}
+                                style={{ background: topicGradient }} // Use topic gradient
+                                className="p-2 rounded-full text-white shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                disabled={!searchTerm} // Disable if input is empty
+                                aria-label="Buscar"
+                            >
+                                <MagnifyingGlassIcon className="h-5 w-5" />
+                            </button>
                         </div>
 
                         {/* DayNightVisor - Placed below header, centered maybe? */}
@@ -291,12 +362,16 @@ export default function TopicPage() {
                                 >
                                     {currentArticles.length > 0 ? (
                                         currentArticles.map((article, index) => (
-                                            // ArticleCard itself keeps its own entrance animation
-                                            <ArticleCard key={article.id} article={article} index={index} />
+                                            <ArticleCard 
+                                                key={article.id} 
+                                                article={article} 
+                                                index={index} 
+                                                searchQuery={activeSearchQuery} // Pass active query
+                                            />
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center text-gray-500 dark:text-gray-400 py-10 w-full">
-                                            <p>No se encontraron noticias {activeSearchQuery ? 'para "'+activeSearchQuery+'"' : ''}.</p>
+                                            <p>No se encontraron noticias {activeSearchQuery ? 'para "' + activeSearchQuery + '"' : ''}.</p>
                                         </div>
                                     )}
                                 </motion.div>
