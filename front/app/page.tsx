@@ -147,8 +147,9 @@ export default function Home() {
       const remainingSeconds = (nextChangeEventSeconds - currentTotalSeconds + totalDaySeconds) % totalDaySeconds
       const remainingHours = Math.floor(remainingSeconds / 3600)
       const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60)
+      const remainingSecondsTime = remainingSeconds % 60
       // Translate time until change string
-      setTimeUntilChange(`${remainingHours}h ${remainingMinutes}m hasta ${currentlyDaytimeNow ? "el atardecer" : "el amanecer"}`)
+      setTimeUntilChange(`${remainingHours}h ${remainingMinutes}m ${remainingSecondsTime}s hasta ${currentlyDaytimeNow ? "el atardecer" : "el amanecer"}`)
 
     }, 1000) // Update every second
 
@@ -299,12 +300,12 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* {isNightOverlayVisible && !isDaytime && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-20 p-4">
+        {isNightOverlayVisible && !isDaytime && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-30 p-4">
             <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
-            <h2 className="text-2xl font-se text-white mb-2 text-center">Houp está descansando</h2>
-            <p className="text-gray-400 max-w-md text-center mb-4">
-              Cerramos por la noche. Vuelve después del amanecer para tu dosis diaria de noticias positivas.
+            <h2 className="text-2xl font-semibold text-indigo-400 font-serif mb-2 text-center">¡Está cerrado!</h2>
+            <p className="text-gray-400 max-w-md text-center mb-2">
+            Vuelve después del amanecer para tu dosis diaria de noticias positivas.
             </p>
             <p className="mt-2 text-sm text-indigo-300 mb-6">{timeUntilChange}</p>
 
@@ -316,7 +317,7 @@ export default function Home() {
               Espiar igual
             </button>
           </div>
-        )} */}
+        )}
 
       </main>
       <Footer /> {/* Footer is now outside main, at the bottom of the flex container */}

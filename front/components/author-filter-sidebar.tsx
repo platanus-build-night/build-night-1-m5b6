@@ -43,7 +43,7 @@ const AuthorFilterPill: React.FC<AuthorFilterPillProps> = ({
 
   return (
     <div
-      className="fixed right-4 top-1/2 transform -translate-y-1/2 z-50 
+      className="fixed right-4 top-1/2 transform -translate-y-1/2 z-20 
                  bg-white/80 dark:bg-gray-800/80 backdrop-blur-md 
                  rounded-full shadow-lg p-2 flex flex-col items-center space-y-2"
     >

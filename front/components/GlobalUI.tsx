@@ -42,7 +42,7 @@ export default function GlobalUI() {
       {shouldRenderStatsButton && (
         <button
           onClick={goToStats}
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 backdrop-blur-sm shadow hover:bg-gray-300/80 dark:hover:bg-gray-600/80 transition-colors"
+          className="fixed top-4 left-4 z-20 p-2 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 backdrop-blur-sm shadow hover:bg-gray-300/80 dark:hover:bg-gray-600/80 transition-colors"
           aria-label="Ver estadísticas"
           title="Estadísticas"
         >
