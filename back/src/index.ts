@@ -3,6 +3,7 @@ import express from 'express';
 import { useExpressServer } from 'routing-controllers';
 import path from 'path';
 import dotenv from 'dotenv';
+import { initializeDatabase } from './data-source';
 
 dotenv.config({ path: '.env' });
 
@@ -15,6 +16,9 @@ useExpressServer(app, {
   controllers: [path.join(__dirname, '/controllers/**/*.controller{.ts,.js}')], // Path to controllers
   defaultErrorHandler: false 
 });
+
+
+initializeDatabase();
 
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}/api`);

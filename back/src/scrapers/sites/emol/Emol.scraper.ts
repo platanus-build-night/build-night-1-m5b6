@@ -1,5 +1,8 @@
 import axios from "axios";
 import { ScrapedArticleDetail, AuthorSource } from "../../types";
+import { generateAndAddAnalysisToArticle } from "../../utils";
+import { saveArticles } from "../../../data-source";
+import { Article } from "../../../models/articles.model";
 
 interface EmolApiHit {
   _source: {
@@ -31,7 +34,7 @@ class EmolScraper {
    * @param numberOfPages how many pages of results to fetch (each pageSize items)
    * @param pageSize items per page (max 100)
    */
-  constructor(numberOfPages: number = 1, pageSize: number = 10) {
+  constructor(numberOfPages: number = 1, pageSize: number = 100) {
     if (numberOfPages < 1) {
       throw new Error("numberOfPages must be at least 1");
     }
@@ -57,7 +60,6 @@ class EmolScraper {
       return null;
     }
   }
-
 
   private cleanHtmlContent(rawContent: string | undefined): string {
     if (!rawContent) return "";
@@ -104,7 +106,11 @@ class EmolScraper {
           // Attempt to parse the date string and convert to ISO format (UTC)
           isoPublishedDate = new Date(publishedDateString).toISOString();
         } catch (e) {
-          console.warn(`Could not parse date string "${publishedDateString}" for Emol article ${src.permalink}: ${(e as Error).message}`);
+          console.warn(
+            `Could not parse date string "${publishedDateString}" for Emol article ${
+              src.permalink
+            }: ${(e as Error).message}`
+          );
         }
       }
 
@@ -141,11 +147,26 @@ class EmolScraper {
     }
 
     // Deduplicate by URL
-    const unique = Array.from(
+    const uniqueArticles = Array.from(
       new Map(allArticles.map((a) => [a.url, a])).values()
     );
-    console.log(`Scrape complete: ${unique.length} unique articles found.`);
-    return unique;
+    console.log(
+      `Scrape complete: ${uniqueArticles.length} unique articles found.`
+    );
+
+    const analysedArticles = await Promise.all(
+      uniqueArticles.map(generateAndAddAnalysisToArticle)
+    );
+
+    try {
+      await saveArticles(analysedArticles as Article[]);
+    } catch (error) {
+      console.error(
+        `Error saving analysed articles: ${(error as Error).message}`
+      );
+    }
+
+    return analysedArticles;
   }
 }
 

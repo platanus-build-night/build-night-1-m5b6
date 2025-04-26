@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MoonIcon } from "@heroicons/react/24/outline"
+import { MoonIcon, EyeIcon } from "@heroicons/react/24/outline"
 import FeaturedHeadline from "@/components/featured-headline"
 import CategoryCard from "@/components/category-card"
 // import GraphMode from "@/components/graph-mode" // Not used in this layout
@@ -9,16 +9,35 @@ import { mockCategories, mockFeaturedHeadline } from "@/lib/mock-data"
 import { motion } from "framer-motion"
 import DayNightVisor from "@/components/day-night-visor"
 
-// TODO: Implement half-circle Day/Night indicator component
-// const DayNightIndicator = ({ isDaytime }) => { ... }
 
 export default function Home() {
   // Remove mode and expandedCategory state
   const [isDaytime, setIsDaytime] = useState(true)
   const [timeUntilChange, setTimeUntilChange] = useState("")
+  // New state to control overlay visibility independently
+  const [isNightOverlayVisible, setIsNightOverlayVisible] = useState(true)
 
+  // Run once on mount to set initial state
   useEffect(() => {
-    const calculateTimeState = () => {
+    const calculateInitialTimeState = () => {
+      const now = new Date()
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const seconds = now.getSeconds()
+      const currentTotalSeconds = hours * 3600 + minutes * 60 + seconds
+      const sunriseSeconds = 6 * 3600 // 6:00 AM
+      const sunsetSeconds = 20 * 3600 // 8:00 PM
+
+      const currentlyDaytime = currentTotalSeconds >= sunriseSeconds && currentTotalSeconds < sunsetSeconds
+      setIsDaytime(currentlyDaytime)
+      setIsNightOverlayVisible(!currentlyDaytime) // Set initial overlay based on time
+    }
+    calculateInitialTimeState()
+  }, [])
+
+  // Run interval timer for updates
+  useEffect(() => {
+    const interval = setInterval(() => {
       const now = new Date()
       const hours = now.getHours()
       const minutes = now.getMinutes()
@@ -30,13 +49,13 @@ export default function Home() {
       const totalDaySeconds = 24 * 3600
 
       let nextChangeEventSeconds: number
-      let currentlyDaytime: boolean
+      let currentlyDaytimeNow: boolean
 
       if (currentTotalSeconds >= sunriseSeconds && currentTotalSeconds < sunsetSeconds) {
-        currentlyDaytime = true
+        currentlyDaytimeNow = true
         nextChangeEventSeconds = sunsetSeconds
       } else {
-        currentlyDaytime = false
+        currentlyDaytimeNow = false
         if (currentTotalSeconds < sunriseSeconds) {
           nextChangeEventSeconds = sunriseSeconds
         } else {
@@ -44,18 +63,30 @@ export default function Home() {
         }
       }
 
-      setIsDaytime(currentlyDaytime)
+      // Update isDaytime state and potentially reset overlay visibility *only on change*
+      setIsDaytime(prevIsDaytime => {
+        if (prevIsDaytime !== currentlyDaytimeNow) {
+          // If it just turned night, make sure overlay is visible
+          if (!currentlyDaytimeNow) {
+            setIsNightOverlayVisible(true)
+          }
+          // If it just turned day, overlay will hide automatically via render logic
+          return currentlyDaytimeNow // Update state
+        }
+        return prevIsDaytime // No change
+      })
 
+      // Update time until change string
       const remainingSeconds = (nextChangeEventSeconds - currentTotalSeconds + totalDaySeconds) % totalDaySeconds
       const remainingHours = Math.floor(remainingSeconds / 3600)
       const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60)
-      setTimeUntilChange(`${remainingHours}h ${remainingMinutes}m until ${currentlyDaytime ? "sunset" : "sunrise"}`)
-    }
+      // Translate time until change string
+      setTimeUntilChange(`${remainingHours}h ${remainingMinutes}m hasta ${currentlyDaytimeNow ? "el atardecer" : "el amanecer"}`)
 
-    calculateTimeState()
-    const interval = setInterval(calculateTimeState, 1000)
-    return () => clearInterval(interval)
-  }, [])
+    }, 1000) // Update every second
+
+    return () => clearInterval(interval) // Cleanup on unmount
+  }, []) // Empty dependency array ensures this effect runs once for the interval
 
   // Calculate positioning for orbiting categories
   const numCategories = mockCategories.length
@@ -115,15 +146,25 @@ export default function Home() {
         })}
       </motion.div>
 
-      {/* Night overlay or alternative display */}
-      {!isDaytime && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
+      {/* Night overlay or alternative display - Conditionally rendered based on isNightOverlayVisible */}
+      {isNightOverlayVisible && !isDaytime && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-20 p-4">
           <MoonIcon className="h-16 w-16 text-indigo-400 mb-4" />
-          <h2 className="text-2xl font-medium text-white mb-2">Houp is resting</h2>
-          <p className="text-gray-400 max-w-md text-center">
-            We're closed for the night. Return after sunrise for your daily dose of positive news.
+          {/* Translate overlay text */}
+          <h2 className="text-2xl font-medium text-white mb-2 text-center">Houp está descansando</h2>
+          <p className="text-gray-400 max-w-md text-center mb-4">
+            Cerramos por la noche. Vuelve después del amanecer para tu dosis diaria de noticias positivas.
           </p>
-          <p className="mt-2 text-sm text-indigo-300">{timeUntilChange}</p>
+          <p className="mt-2 text-sm text-indigo-300 mb-6">{timeUntilChange}</p>
+
+          {/* Bypass Button - Translate text */}
+          <button
+            onClick={() => setIsNightOverlayVisible(false)} // Hide overlay on click
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-black"
+          >
+            <EyeIcon className="h-5 w-5 mr-2" />
+            Espiar igual
+          </button>
         </div>
       )}
 

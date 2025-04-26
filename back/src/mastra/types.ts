@@ -21,11 +21,10 @@ export enum Sentiment {
 }
 
 export enum Topic {
-  Nature = "nature",
   Social = "social",
   Science = "science",
   Technology = "tech",
-  Health = "health",
   Arts = "arts",
+  Sports = "sports",
+  Business = "business",
 }
-

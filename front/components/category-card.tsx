@@ -76,7 +76,7 @@ export default function CategoryCard({ category }: CategoryCardProps) {
           {category.name}
         </p>
         <span className="text-[8px] text-white dark:text-gray-400 mt-0.5">
-          ({articleCount} {articleCount === 1 ? 'story' : 'stories'})
+          ({articleCount} {articleCount === 1 ? 'noticia' : 'noticias'})
         </span>
       </div>
     </motion.div>

@@ -2,15 +2,15 @@ import type { Category, FeaturedHeadline } from "./types";
 
 export const mockFeaturedHeadline: FeaturedHeadline = {
   headline:
-    "Global Reforestation Efforts Exceed Targets for Third Consecutive Year",
+    "Esfuerzos Globales de Reforestación Superan Objetivos por Tercer Año Consecutivo",
   digest:
-    "Communities worldwide have planted over 2 billion trees, restoring critical ecosystems and demonstrating unprecedented environmental cooperation.",
+    "Comunidades de todo el mundo han plantado más de 2 mil millones de árboles, restaurando ecosistemas críticos y demostrando una cooperación ambiental sin precedentes.",
 };
 
 export const mockCategories: Category[] = [
   {
     id: "nature",
-    name: "Nature",
+    name: "Naturaleza",
     gradient: "linear-gradient(135deg, #BDFCC9, #D4F5E8, #FFFACD)",
     icon: "GlobeAltIcon",
     articles: [
@@ -74,7 +74,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: "science",
-    name: "Science",
+    name: "Ciencia",
     gradient: "linear-gradient(135deg, #CFDFFF, #C1EEFF, #C4F5F5)",
     icon: "BeakerIcon",
     articles: [
@@ -107,7 +107,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: "technology",
-    name: "Technology",
+    name: "Tecnología",
     gradient: "linear-gradient(135deg, #E1C4F5, #D5C9F0, #CED3F5)",
     icon: "CpuChipIcon",
     articles: [
@@ -139,7 +139,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: "health",
-    name: "Health",
+    name: "Salud",
     gradient: "linear-gradient(135deg, #FCDAE5, #FCE0E0, #FFDBC1)",
     icon: "HeartIcon",
     articles: [
@@ -172,7 +172,7 @@ export const mockCategories: Category[] = [
   },
   {
     id: "arts",
-    name: "Arts",
+    name: "Artes",
     gradient: "linear-gradient(135deg, #C4E7E1, #D0F0D0, #E5F5E0)",
     icon: "PaintBrushIcon",
     articles: [

@@ -5,12 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { AuthorSource } from "./scrapers/types"; // Adjust path if necessary
-import { Sentiment, Topic } from "./mastra/types"; // Adjust path if necessary
-import { ScrapedArticleDetail as IScrapedArticleDetail } from "./scrapers/types"; // Import the interface
+import { AuthorSource } from "../scrapers/types"; 
+import { Sentiment, Topic } from "../mastra/types";
+import { ScrapedArticleDetail as IScrapedArticleDetail } from "../scrapers/types"; // Import the interface
 
 @Entity("scraped_articles")
-export class ScrapedArticleDetail implements IScrapedArticleDetail {
+export class Article implements IScrapedArticleDetail {
   @PrimaryColumn({ type: "varchar", nullable: false })
   url!: string;
 

@@ -11,6 +11,7 @@ export const generateAndAddAnalysisToArticle = async (
       toolChoice: "required",
       maxRetries: 0,
       maxSteps: 1,
+      temperature: 0.4,
     }
   );
   const toolResult = agentResult.toolResults[0].result;

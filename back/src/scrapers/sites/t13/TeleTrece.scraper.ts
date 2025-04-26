@@ -11,6 +11,8 @@ import {
   ArticleAnalysisOutput, // Import output type
 } from "../../../mastra/agents/articleAnalyzerAgent"; // Import the agent directly
 import { generateAndAddAnalysisToArticle } from "../../utils";
+import { saveArticles } from "../../../data-source";
+import { Article } from "../../../models/articles.model"; // Correct import path for Article
 // --- Interfaces ---
 interface ArticleListItem {
   title: string;
@@ -37,7 +39,7 @@ const DEFAULT_HEADERS = {
 class TeleTreceScraper {
   private readonly numberOfPagesToScrape: number;
 
-  constructor(numberOfPages: number = 1) {
+  constructor(numberOfPages: number = 10) {
     // Default to scraping 1 page
     if (numberOfPages < 1) {
       throw new Error("Number of pages to scrape must be at least 1.");
@@ -263,15 +265,16 @@ class TeleTreceScraper {
       console.log(
         `Scrape process completed. Returning ${finalArticles.length} final articles.`
       );
+      await saveArticles(finalArticles as Article[]);
       return finalArticles;
     } catch (error) {
       console.error(
-        `Error during final filtering/tagging: ${(error as Error).message}`
+        `Error during final filtering/tagging or saving: ${(error as Error).message}`
       );
       console.log(
-        `Scrape process completed with filtering error. Returning ${detailedArticles.length} unfiltered articles.`
+        `Scrape process completed with error. Returning ${detailedArticles.length} unfiltered/unsaved detailed articles.`
       );
-      return detailedArticles; // Return successfully scraped articles even if filtering fails
+      return detailedArticles; // Return successfully scraped articles even if saving/filtering fails
     }
   }
 }

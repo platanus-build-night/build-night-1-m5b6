@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "typeorm": "ts-node ./node_modules/typeorm/cli.js -d src/data-source.ts"
+    "typeorm": "ts-node ./node_modules/typeorm/cli.js -d src/data-source.ts",
+    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
+    "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert -d src/data-source.ts"
   },
   "keywords": [],
   "author": "",
