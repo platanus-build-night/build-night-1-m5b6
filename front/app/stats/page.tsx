@@ -17,6 +17,22 @@ interface AuthorStats {
     averageScore?: number; // 0-100, optional if no scored articles
 }
 
+// Helper function for Negativity Style
+const getNegativityStyle = (rate: number): { barColor: string; textColorClass: string } => {
+    if (rate < 20) return { barColor: 'hsl(0, 40%, 75%)', textColorClass: 'text-red-400 dark:text-red-500/80' }; // Lighter, less saturated red
+    if (rate < 60) return { barColor: 'hsl(0, 60%, 60%)', textColorClass: 'text-red-500 dark:text-red-400' }; // Medium red
+    return { barColor: 'hsl(0, 75%, 45%)', textColorClass: 'text-red-600 dark:text-red-300' }; // Darker, more saturated red
+};
+
+// Helper function for Positivity (Average Score) Style
+const getPositivityStyle = (score: number | undefined): { barColor: string; textColorClass: string } => {
+    if (score === undefined) return { barColor: 'hsl(210, 10%, 70%)', textColorClass: 'text-gray-500 dark:text-gray-400' }; // Neutral Gray
+    const hue = score * 1.2; // 0-100 maps to 0-120 (Red to Green)
+    if (score < 40) return { barColor: `hsl(${hue}, 55%, 60%)`, textColorClass: 'text-orange-500 dark:text-orange-400' }; // Reds/Oranges
+    if (score < 70) return { barColor: `hsl(${hue}, 50%, 50%)`, textColorClass: 'text-yellow-500 dark:text-yellow-400' }; // Yellows/Lime
+    return { barColor: `hsl(${hue}, 60%, 40%)`, textColorClass: 'text-green-600 dark:text-green-400' }; // Greens
+};
+
 const pageVariants = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -100,14 +116,14 @@ export default function StatsPage() {
 
                     {/* Stats Section */}
                     <section>
-                        <h2 className="text-xl font-semibold font-serif mb-4">Negatividad por Fuente</h2>
+                        <h2 className="text-xl font-semibold font-serif mb-4">Estadísticas por Fuente</h2>
                         {stats.length > 0 ? (
                             <div className="space-y-3">
                                 {stats.map(({ author, total, negative, negativityRate, averageScore }) => {
                                     const { symbol, src } = sourceIcon[author as AuthorSource] || {};
-                                    const negativityBarColor = `hsl(0, ${Math.min(negativityRate, 100)}%, 50%)`;
-                                    const positivityScore = averageScore ?? 50;
-                                    const positivityBarColor = `hsl(${positivityScore * 1.2}, 70%, 45%)`;
+                                    // Get styles using helper functions
+                                    const negativityStyle = getNegativityStyle(negativityRate);
+                                    const positivityStyle = getPositivityStyle(averageScore);
 
                                     return (
                                         <div key={author} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700 flex items-center gap-4">
@@ -122,42 +138,42 @@ export default function StatsPage() {
                                             {/* Author Name & Stats Text */} 
                                             <div className="flex-grow">
                                                 <span className="font-medium text-gray-800 dark:text-gray-200 block mb-0.5">{author}</span>
-                                                {/* Negativity Text */} 
-                                                <div className="text-xs text-red-600 dark:text-red-400">
+                                                {/* Negativity Text - Use new text color class */}
+                                                <div className={`text-xs ${negativityStyle.textColorClass}`}>
                                                    {negativityRate}% negatividad
                                                 </div>
-                                                {/* Positivity Score Text */} 
-                                                <div className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                                                {/* Positivity Score Text - Use new text color class */} 
+                                                <div className={`text-xs mt-0.5 ${positivityStyle.textColorClass}`}>
                                                    {averageScore !== undefined ? `${averageScore} puntaje promedio` : '-- puntaje promedio'}
                                                 </div>
                                             </div>
                                             
                                             {/* Stat Bars Container */} 
-                                            <div className="flex flex-col gap-1.5 w-32 flex-shrink-0"> {/* Increased width slightly */} 
+                                            <div className="flex flex-col gap-1.5 w-32 flex-shrink-0">
                                                 {/* Negativity Bar & Percentage */} 
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
                                                         <div 
                                                             className="h-1.5 rounded-full" 
-                                                            style={{ width: `${negativityRate}%`, backgroundColor: negativityBarColor }}
+                                                            style={{ width: `${negativityRate}%`, backgroundColor: negativityStyle.barColor }}
                                                         ></div>
                                                     </div>
-                                                    <span className="text-xs font-mono text-red-600 dark:text-red-400 w-8 text-right">{negativityRate}%</span>
+                                                    {/* Use new text color class */}
+                                                    <span className={`text-xs font-mono w-8 text-right ${negativityStyle.textColorClass}`}>{negativityRate}%</span>
                                                 </div>
                                                 {/* Average Score Bar & Percentage */} 
-                                                {averageScore !== undefined ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
-                                                            <div 
-                                                                className="h-1.5 rounded-full" 
-                                                                style={{ width: `${averageScore}%`, backgroundColor: positivityBarColor }}
-                                                            ></div>
-                                                        </div>
-                                                        <span className="text-xs font-mono text-green-600 dark:text-green-400 w-8 text-right">{averageScore}%</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
+                                                        <div 
+                                                            className="h-1.5 rounded-full" 
+                                                            style={{ width: `${averageScore ?? 0}%`, backgroundColor: positivityStyle.barColor }}
+                                                        ></div>
                                                     </div>
-                                                ) : (
-                                                    <div className="text-xs text-gray-400 italic h-4 flex items-center">--%</div> 
-                                                )}
+                                                     {/* Use new text color class */}
+                                                     <span className={`text-xs font-mono w-8 text-right ${positivityStyle.textColorClass}`}>
+                                                       {averageScore !== undefined ? `${averageScore}%` : '--%'}
+                                                     </span>
+                                                </div>
                                             </div>
                                         </div>
                                     );
