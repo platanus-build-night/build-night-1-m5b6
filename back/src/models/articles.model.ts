@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { AuthorSource, Sentiment, Topic } from "../scrapers/types";
+import { AuthorSource, Topic, Sentiment } from "../scrapers/types";
 import { ScrapedArticleDetail as IScrapedArticleDetail } from "../scrapers/types"; // Import the interface
 
 @Entity("scraped_articles")

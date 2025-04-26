@@ -8,6 +8,8 @@ import { useArticles } from "@/hooks/useArticles"
 
 interface TopicCardProps {
   topic: Topic
+  layoutId: string
+  onClick: () => void
 }
 
 const IconComponent = ({ name, className }: { name: string; className?: string }) => {
@@ -30,14 +32,14 @@ const getTopicCount = (topic: Topic) => {
   return topicArticles.length
 }
 
-export default function TopicCard({ topic }: TopicCardProps) {
+export default function TopicCircle({ topic, layoutId, onClick }: TopicCardProps) {
   // Calculate size in rem based on article count
-  const baseSizeRem = 3; // 12 * 0.25rem
-  const sizeIncrementRem = 0.5; // 2 * 0.25rem
+  const baseSizeRem = 5; // 12 * 0.25rem
+  const sizeIncrementRem = 2.25; // 2 * 0.25rem
   const articleCount = getTopicCount(topic)
   const dynamicSizeRem = baseSizeRem + articleCount * sizeIncrementRem;
   // Cap the size to avoid excessively large cards
-  const maxSizeRem = 6; // 24 * 0.25rem
+  const maxSizeRem = 8; // 24 * 0.25rem
   const finalSizeRem = Math.min(dynamicSizeRem, maxSizeRem);
 
   // Get metadata using the new functions
@@ -47,15 +49,16 @@ export default function TopicCard({ topic }: TopicCardProps) {
 
   return (
     <motion.div
+      layoutId={layoutId}
+      onClick={onClick}
       className={`group relative rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg flex items-center justify-center text-center cursor-pointer flex-shrink-0`}
       style={{
         isolation: "isolate",
         borderRadius: '50%',
-        // Apply size directly via inline style
         width: `${finalSizeRem}rem`,
         height: `${finalSizeRem}rem`,
       }}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.2 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       {/* Gradient Background */}
@@ -80,7 +83,7 @@ export default function TopicCard({ topic }: TopicCardProps) {
 
       {/* Icon and Text Content */}
       <div className="relative z-10 flex flex-col items-center justify-center p-1">
-        <IconComponent name={iconName} className="h-5 w-5 text-gray-700 mb-0.5" />
+        <IconComponent name={iconName} className="h-4 w-4 text-white mb-0.5" />
         <p className="text-xl text-center font-medium text-white dark:text-gray-200 font-serif truncate group-hover:whitespace-normal group-hover:overflow-visible">
           {name}
         </p>

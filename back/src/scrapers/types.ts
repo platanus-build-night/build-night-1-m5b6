@@ -3,6 +3,7 @@ import { z } from "zod";
 export enum AuthorSource {
   Emol = "Emol",
   T13 = "T13",
+  LaTercera = "LaTercera",
 }
 
 export interface ScrapedArticleDetail {

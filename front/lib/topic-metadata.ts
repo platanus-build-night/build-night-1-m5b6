@@ -13,20 +13,26 @@ export const topicNames: Record<Topic, string> = {
 export const getTopicGradient = (topic: Topic): string => {
   switch (topic) {
     case "social":
-      return "linear-gradient(135deg, #FFDAC1, #FFEBC1, #FFF4C1)";
+      // Warm Pink to Light Orange
+      return "linear-gradient(135deg, #ff9a9e, #fad0c4)";
     case "science":
-      return "linear-gradient(135deg, #CFDFFF, #C1EEFF, #C4F5F5)";
+      // Deep Blue to Purple
+      return "linear-gradient(135deg, #2b5876, #4e4376)";
     case "tech":
-      return "linear-gradient(135deg, #E1C4F5, #D5C9F0, #CED3F5)";
+      // Electric Pink/Purple to Vibrant Blue
+      return "linear-gradient(135deg, #f953c6, #b91d73)";
     case "arts":
-      return "linear-gradient(135deg, #C4E7E1, #D0F0D0, #E5F5E0)";
+      // Light Green to Soft Aqua/Blue
+      return "linear-gradient(135deg, #a8ff78, #78ffd6)";
     case "sports":
-      return "linear-gradient(135deg, #D0EFFF, #C8E6FF, #D7F9FF)";
+      // Fiery Orange to Bold Red
+      return "linear-gradient(135deg, #f12711, #f5af19)";
     case "business":
-       return "linear-gradient(135deg, #F5F5F5, #E8E8E8, #DCDCDC)";
+       // Slate Blue to Steel Gray
+       return "linear-gradient(135deg, #2c3e50, #bdc3c7)";
     default:
-       // Optional: Return a default gradient or handle unexpected topics
-       return "linear-gradient(135deg, #CCCCCC, #AAAAAA)";
+       // Medium Gray
+       return "linear-gradient(135deg, #888888, #AAAAAA)";
   }
 };
 
