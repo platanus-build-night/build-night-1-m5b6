@@ -152,18 +152,3 @@
     transform: translateX(calc(100vw + 200%));
   }
 }
-
-/* Drop Cap for Article Titles */
-.article-title-dropcap::first-letter {
-  /* Style properties from CSS-Tricks example */
-  color: #000; /* Or use a theme color if desired */
-  float: left;
-  font-family: Georgia, serif; /* Fallback to serif */
-  font-size: 4rem; /* Adjust size as needed (much larger than base text) */
-  line-height: 0.8; /* Adjust line-height to align vertically */
-  padding-top: 0.2rem; /* Adjust padding */
-  padding-right: 0.5rem;
-  padding-left: 0.1rem;
-  margin-bottom: -0.1em; /* Optional fine-tuning */
-  font-weight: bold;
-}

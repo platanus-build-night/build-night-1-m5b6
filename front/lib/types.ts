@@ -33,3 +33,11 @@ export interface ArticlesApiResponse {
 
 // --- Metadata moved to lib/topic-metadata.ts ---
 // Remove topicNames, getTopicGradient, getTopicIcon
+
+
+export enum AuthorSource {
+  Emol = "Emol",
+  T13 = "T13",
+  LaTercera = "LaTercera",
+  ElPais = "ElPais",
+}

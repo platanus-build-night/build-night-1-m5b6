@@ -24,7 +24,7 @@ export default function TopicPage() {
     const params = useParams();
     const router = useRouter();
     const { topic: topicParam } = params; // Get topic from URL
-    const { articles, loading, error } = useArticles(); // Fetch all articles
+    const { positiveArticles, negativeArticles, loading, error } = useArticles(); // Fetch all articles
 
     const [topicGradient, setTopicGradient] = useState<string>("");
     const [topicDisplayName, setTopicDisplayName] = useState<string>("");
@@ -47,7 +47,7 @@ export default function TopicPage() {
             const iconName = getTopicIcon(currentTopic);
 
             // Filter articles for the current topic
-            const topicArticles = articles.filter(
+            const topicArticles = positiveArticles.filter(
                 (article) => article.topic === currentTopic
             );
 
@@ -75,7 +75,7 @@ export default function TopicPage() {
             setTopicIconComponent(null);
             setCurrentPage(0);
         }
-    }, [loading, articles, topicParam, router]); // Removed router from dependency array if not strictly needed for this effect's logic
+    }, [loading, positiveArticles, topicParam, router]); // Removed router from dependency array if not strictly needed for this effect's logic
 
     // Effect to control the ready state for animations
     useEffect(() => {

@@ -8,6 +8,8 @@ const API_URL = "http://localhost:3000/articles";
 export function useArticles() {
   // Keep only articles, topics, loading, and error state
   const [articles, setArticles] = useState<Article[]>([]);
+  const [positiveArticles, setPositiveArticles] = useState<Article[]>([]);
+  const [negativeArticles, setNegativeArticles] = useState<Article[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -29,13 +31,11 @@ export function useArticles() {
         const processedArticles = data.articles.map(article => {
           if (!article || typeof article !== 'object' || !article.url || !article.topic) {
             console.warn("Skipping invalid or topic-less article object:", article);
-            return null; // Skip invalid articles
+            return null;
           }
-          // Assuming API response matches Article type, just add ID
-          // If API structure is different, adapt the mapping here
           return {
             ...article,
-            id: article.url, // Use URL as ID
+            id: article.url, 
           };
         }).filter((article): article is Article => article !== null);
 
@@ -44,6 +44,8 @@ export function useArticles() {
 
         // Set the articles state directly
         setArticles(processedArticles);
+        setPositiveArticles(processedArticles.filter(article => article.sentiment === "positive"));
+        setNegativeArticles(processedArticles.filter(article => article.sentiment === "negative"));
         setTopics(uniqueTopics); // Set the unique topics
 
       } catch (err) {
@@ -60,5 +62,5 @@ export function useArticles() {
   }, []);
 
   // Return topics and articles, loading, and error
-  return { articles, topics, loading, error };
+  return { articles, positiveArticles, negativeArticles, topics, loading, error };
 }
